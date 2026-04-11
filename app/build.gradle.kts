@@ -94,18 +94,7 @@ fun gitBranch(): String = try {
         .inputStream.bufferedReader().readText().trim()
 } catch (_: Exception) { "unknown" }
 
-fun buildTimestamp(): String {
-    val now = System.currentTimeMillis()
-    val cal = java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("UTC"))
-    cal.timeInMillis = now
-    return "%04d%02d%02d-%02d%02d".format(
-        cal.get(java.util.Calendar.YEAR),
-        cal.get(java.util.Calendar.MONTH) + 1,
-        cal.get(java.util.Calendar.DAY_OF_MONTH),
-        cal.get(java.util.Calendar.HOUR_OF_DAY),
-        cal.get(java.util.Calendar.MINUTE)
-    )
-}
+fun buildTimestamp(): String = "${System.currentTimeMillis()}"
 
 // Feature branches get a distinct versionName suffix so APKs are identifiable:
 // e.g. "2.2.0-beta3+feature.aap-testing.a1b2c3d"
