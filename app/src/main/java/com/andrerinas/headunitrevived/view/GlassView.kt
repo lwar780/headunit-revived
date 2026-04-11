@@ -2,7 +2,6 @@ package com.andrerinas.headunitrevived.view
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.RenderEffect
 import android.graphics.Shader
@@ -12,7 +11,6 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
-import androidx.core.content.ContextCompat
 import com.andrerinas.headunitrevived.R
 
 class GlassView @JvmOverloads constructor(
@@ -21,8 +19,21 @@ class GlassView @JvmOverloads constructor(
 
     enum class GlassState { IDLE, READY, ACTIVE, WARNING, ERROR }
 
+    companion object {
+        private var globalTheme: GlassTheme? = null
+        
+        fun setGlobalTheme(theme: GlassTheme) {
+            globalTheme = theme
+        }
+        
+        fun getTheme(context: Context): GlassTheme {
+            return globalTheme ?: CalmGlassTheme(context.applicationContext)
+        }
+    }
+
     private var currentState = GlassState.IDLE
     private var cornerRadius: Float = 0f
+    private var blurRadius: Float = 25f
     private var tintColorOverride: Int? = null
     
     private val backgroundDrawable = GradientDrawable().apply {
@@ -30,13 +41,20 @@ class GlassView @JvmOverloads constructor(
     }
 
     init {
+        val theme = getTheme(context)
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.GlassView, defStyleAttr, 0)
+        
         val stateInt = typedArray.getInt(R.styleable.GlassView_glassState, 0)
         currentState = GlassState.values()[stateInt]
         
         cornerRadius = typedArray.getDimension(
             R.styleable.GlassView_glassCornerRadius,
-            context.resources.getDimension(R.dimen.glass_radius_panel)
+            theme.cornerRadius
+        )
+        
+        blurRadius = typedArray.getFloat(
+            R.styleable.GlassView_glassBlur,
+            theme.blurRadius
         )
         
         if (typedArray.hasValue(R.styleable.GlassView_glassTint)) {
@@ -59,13 +77,11 @@ class GlassView @JvmOverloads constructor(
     }
 
     private fun updateVisualsForState(state: GlassState) {
-        val color = tintColorOverride ?: colorForState(state)
+        val theme = getTheme(context)
+        val color = tintColorOverride ?: theme.surfaceColor(state)
         backgroundDrawable.setColor(color)
         
-        val strokeColor = when (state) {
-            GlassState.READY, GlassState.ACTIVE -> ContextCompat.getColor(context, R.color.glass_border_active)
-            else -> ContextCompat.getColor(context, R.color.glass_border)
-        }
+        val strokeColor = theme.borderColor(state)
         val strokeWidth = if (state == GlassState.READY || state == GlassState.ACTIVE) 2 else 1
         backgroundDrawable.setStroke((strokeWidth * resources.displayMetrics.density).toInt(), strokeColor)
     }
@@ -73,8 +89,9 @@ class GlassView @JvmOverloads constructor(
     fun setGlassState(state: GlassState) {
         if (state == currentState) return
         
-        val oldColor = tintColorOverride ?: colorForState(currentState)
-        val newColor = tintColorOverride ?: colorForState(state)
+        val theme = getTheme(context)
+        val oldColor = tintColorOverride ?: theme.surfaceColor(currentState)
+        val newColor = tintColorOverride ?: theme.surfaceColor(state)
 
         ValueAnimator.ofArgb(oldColor, newColor).apply {
             duration = 300
@@ -82,11 +99,8 @@ class GlassView @JvmOverloads constructor(
                 val color = animator.animatedValue as Int
                 backgroundDrawable.setColor(color)
                 
-                // Also update stroke color if transitioning to/from active states
-                val strokeColor = when (state) {
-                    GlassState.READY, GlassState.ACTIVE -> ContextCompat.getColor(context, R.color.glass_border_active)
-                    else -> ContextCompat.getColor(context, R.color.glass_border)
-                }
+                val currentTheme = getTheme(context)
+                val strokeColor = currentTheme.borderColor(state)
                 val strokeWidth = if (state == GlassState.READY || state == GlassState.ACTIVE) 2 else 1
                 backgroundDrawable.setStroke((strokeWidth * resources.displayMetrics.density).toInt(), strokeColor)
             }
@@ -97,18 +111,12 @@ class GlassView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Apply RenderEffect.createBlurEffect(25f, 25f, CLAMP)
-            // Note: This blurs the content of the view itself.
-            setRenderEffect(RenderEffect.createBlurEffect(25f, 25f, Shader.TileMode.CLAMP))
-        }
+        applyBlur()
     }
 
-    private fun colorForState(state: GlassState): Int = when (state) {
-        GlassState.IDLE -> R.color.glass_idle
-        GlassState.READY -> R.color.glass_ready
-        GlassState.ACTIVE -> R.color.glass_active
-        GlassState.WARNING -> R.color.glass_warning
-        GlassState.ERROR -> R.color.glass_error
-    }.let { ContextCompat.getColor(context, it) }
+    private fun applyBlur() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadius > 0) {
+            setRenderEffect(RenderEffect.createBlurEffect(blurRadius, blurRadius, Shader.TileMode.CLAMP))
+        }
+    }
 }

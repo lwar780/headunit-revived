@@ -308,6 +308,7 @@ class HomeFragment : Fragment() {
 
         selfModePanel.setGlassState(glassState)
         selfModeStatus.text = statusText
+        settingsPanel.setGlassState(glassState)
         
         selfModePanel.contentDescription = getString(R.string.cd_self_mode_panel, statusText)
         usbPanel.contentDescription = getString(R.string.cd_usb_panel, if (state is ConnectionState.Disconnected) getString(R.string.cd_status_not_connected) else statusText)

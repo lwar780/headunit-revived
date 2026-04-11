@@ -10,5 +10,6 @@
         </attr>
         <attr name="glassCornerRadius" format="dimension"/>
         <attr name="glassTint" format="color"/>
+        <attr name="glassBlur" format="float"/>
     </declare-styleable>
 </resources>
