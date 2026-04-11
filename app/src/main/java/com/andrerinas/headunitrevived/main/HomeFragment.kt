@@ -20,7 +20,6 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.TextView
 import android.graphics.Color
-import android.content.res.ColorStateList
 import android.widget.Toast
 import android.net.VpnService
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,7 +45,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
 import com.andrerinas.headunitrevived.utils.Settings
 import com.andrerinas.headunitrevived.utils.VpnControl
 
@@ -57,7 +55,7 @@ class HomeFragment : Fragment() {
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             AppLog.i("VPN permission granted. Starting DummyVpnService and Self Mode.")
-            VpnControl.startVpn(requireContext());
+            VpnControl.startVpn(requireContext())
             startSelfModeInternal()
         } else {
             AppLog.w("VPN permission denied. Offline Self Mode might fail.")
@@ -143,16 +141,6 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // Apply motion
-        listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel, statusBar).forEach { it.applySpringPress() }
-        
-        // Staggered entry
-        val panels = listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel)
-        panels.forEachIndexed { index, panel ->
-            if (panel.visibility != View.GONE) panel.springFadeIn(index * 60L)
-        }
-        statusBar.springFadeIn(panels.size * 60L)
-
         val appSettings = App.provide(requireContext()).settings
         
         // Toggle gear vs setup based on wizard completion
@@ -163,6 +151,16 @@ class HomeFragment : Fragment() {
             settingsPanel.visibility = View.GONE
             settingsGear.visibility = View.VISIBLE
         }
+
+        // Apply motion
+        listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel, statusBar).forEach { it.applySpringPress() }
+        
+        // Staggered entry
+        val panels = listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel)
+        panels.filter { it.visibility != View.GONE }.forEachIndexed { index, panel ->
+            panel.springFadeIn(index * 60L)
+        }
+        statusBar.springFadeIn(panels.count { it.visibility != View.GONE } * 60L)
 
         if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot) {
             ContextCompat.startForegroundService(requireContext(),
@@ -216,7 +214,7 @@ class HomeFragment : Fragment() {
                 return
             } else {
                 AppLog.i("VPN permission already granted. Starting VPN service.")
-                VpnControl.startVpn(requireContext());
+                VpnControl.startVpn(requireContext())
             }
         } else if (activeNetwork == null) {
             AppLog.i("Device is offline and VPN is not available in this build. Self Mode may fail.")
@@ -287,23 +285,19 @@ class HomeFragment : Fragment() {
     }
 
     private fun updatePanelStates(state: ConnectionState) {
-        // Map ConnectionState to GlassState and status text
         val (glassState, statusText) = when (state) {
             is ConnectionState.Disconnected -> GlassState.IDLE to getString(R.string.cd_status_not_connected)
             is ConnectionState.Connecting -> GlassState.ACTIVE to getString(R.string.cd_status_connecting)
             is ConnectionState.Connected,
             is ConnectionState.StartingTransport -> GlassState.ACTIVE to getString(R.string.cd_status_connected)
             is ConnectionState.HandshakeComplete,
-            is ConnectionState.TransportStarted -> GlassState.READY to (state.toString().let { if (state is ConnectionState.HandshakeComplete) state.deviceName ?: getString(R.string.cd_status_ready) else getString(R.string.cd_status_ready) })
+            is ConnectionState.TransportStarted -> GlassState.READY to (if (state is ConnectionState.HandshakeComplete) state.deviceName ?: getString(R.string.cd_status_ready) else getString(R.string.cd_status_ready))
             is ConnectionState.Error -> GlassState.ERROR to getString(R.string.cd_status_error, state.message)
         }
 
-        // Apply to panels (logic: only Self Mode shows specific state for now, 
-        // USB/WiFi show state when they are the active transport)
         selfModePanel.setGlassState(glassState)
         selfModeStatus.text = statusText
         
-        // Dynamic content descriptions for a11y
         selfModePanel.contentDescription = getString(R.string.cd_self_mode_panel, statusText)
         usbPanel.contentDescription = getString(R.string.cd_usb_panel, if (state is ConnectionState.Disconnected) getString(R.string.cd_status_not_connected) else statusText)
         wifiPanel.contentDescription = getString(R.string.cd_wifi_panel, if (state is ConnectionState.Disconnected) getString(R.string.cd_status_not_connected) else statusText)
@@ -313,7 +307,6 @@ class HomeFragment : Fragment() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val audioManager = requireContext().getSystemService<AudioManager>()
             val outputs = audioManager?.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            // Simplistic heuristic for active output
             val activeOutput = outputs?.firstOrNull { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES || it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
             val outputName = when (activeOutput?.type) {
                 AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> "Bluetooth"
@@ -326,14 +319,12 @@ class HomeFragment : Fragment() {
             audioOutputText.text = "Audio: System"
         }
         
-        // Mic status from CommManager if available
-        val micSource = "Built-in" // Placeholder for now, real status comes via listener in Phase 3
+        val micSource = "Built-in"
         micStatusText.text = getString(R.string.cd_mic_source, micSource)
     }
 
     private fun setupListeners() {
         exitButton.setOnClickListener {
-            val appSettings = App.provide(requireContext()).settings
             val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
                 action = AapService.ACTION_STOP_SERVICE
             }
@@ -371,7 +362,7 @@ class HomeFragment : Fragment() {
         wifiPanel.setOnClickListener {
             val mode = App.provide(requireContext()).settings.wifiConnectionMode
             when (mode) {
-                1 -> { // Auto (Headunit Server)
+                1 -> {
                     if (!commManager.isConnected) {
                         val intent = Intent(requireContext(), AapService::class.java).apply {
                             action = AapService.ACTION_START_WIRELESS_SCAN
@@ -379,7 +370,7 @@ class HomeFragment : Fragment() {
                         ContextCompat.startForegroundService(requireContext(), intent)
                     }
                 }
-                2 -> { // Helper
+                2 -> {
                     if (!commManager.isConnected) {
                         val strategy = App.provide(requireContext()).settings.helperConnectionStrategy
                         if (strategy == 2) showNearbyDeviceSelector()
@@ -421,7 +412,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun showNativeAaDeviceSelector() {
-...
         val adapter = if (Build.VERSION.SDK_INT >= 18) {
             (requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
         } else {
@@ -460,7 +450,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun showNearbyDeviceSelector() {
-        // Ensure NearbyManager discovery is running via AapService
         ContextCompat.startForegroundService(requireContext(),
             Intent(requireContext(), AapService::class.java).apply {
                 action = AapService.ACTION_START_WIRELESS_SCAN
@@ -490,7 +479,6 @@ class HomeFragment : Fragment() {
 
         dialog.show()
 
-        // Live-update the dialog list as endpoints are discovered
         collectJob = viewLifecycleOwner.lifecycleScope.launch {
             NearbyManager.discoveredEndpoints.collect { endpoints ->
                 listAdapter.clear()
