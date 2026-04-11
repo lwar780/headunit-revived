@@ -162,7 +162,7 @@
     <string name="overlay_permission_title">Дозвіл на запуск у фоні</string>
     <string name="overlay_permission_description">Щоб Headunit Revived міг автоматично відкриватися при підключенні Bluetooth, увімкніть дозвіл "Показувати поверх інших програм" на наступному екрані.</string>
     <string name="open_settings">Налаштування</string>
-    <string name="wireless_connection_settings">Бездротове з'єднання</string>
+    <string name="wireless_connection_settings">Бездротове з\'єднання</string>
     <string name="right_hand_drive">Правостороннє керування</string>
     <string name="right_hand_drive_description">Розмістити інтерфейс для правостороннього керування автомобілем.</string>
     <string name="category_graphic">Графіка</string>
