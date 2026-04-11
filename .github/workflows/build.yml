@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flavor: [ github, playstore ]
+        flavor: [ github ]
         build_type: [ debug, release ]
       fail-fast: false
 

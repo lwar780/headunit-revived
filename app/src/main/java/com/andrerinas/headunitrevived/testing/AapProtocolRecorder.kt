@@ -41,7 +41,7 @@ class AapProtocolRecorder(
     private val sessionStartMs = AtomicReference(0L)
     private val errorFrameIndex = AtomicReference(-1L)
     private val errorType = AtomicReference("")
-    private val frameCounter = AtomicReference(0L)
+    private val frameCounter = java.util.concurrent.atomic.AtomicLong(0L)
     private val messageTypesExchanged = mutableSetOf<Int>()
 
     // Forward capture: after error, capture this many more ms
