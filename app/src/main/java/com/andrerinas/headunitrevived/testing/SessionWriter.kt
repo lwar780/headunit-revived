@@ -155,7 +155,8 @@ data class SessionMetadata(
     val errorFrameIndex: Long = -1,
     val durationMs: Long,
     val createdMs: Long = System.currentTimeMillis(),
-    val flags: Int = 0
+    val flags: Int = 0,
+    val activeMicSource: String = "unknown"
 ) {
     fun toJson(sessionId: UUID, frameCount: Int, fileSizeBytes: Long): String {
         return JSONObject().apply {
@@ -174,6 +175,7 @@ data class SessionMetadata(
             put("frameCount", frameCount)
             put("durationMs", durationMs)
             put("fileSizeBytes", fileSizeBytes)
+            put("activeMicSource", activeMicSource)
             put("created", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
                 timeZone = java.util.TimeZone.getTimeZone("UTC")
             }.format(java.util.Date(createdMs)))

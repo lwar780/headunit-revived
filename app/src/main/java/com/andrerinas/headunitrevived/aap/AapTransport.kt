@@ -87,7 +87,7 @@ class AapTransport(
     internal val aapVideo: AapVideo
     private var sendThread: HandlerThread? = null
     private var pollThread: HandlerThread? = null
-    private val micRecorder: MicRecorder = MicRecorder(settings.micSampleRate, context)
+    internal val micRecorder: MicRecorder = MicRecorder(settings.micSampleRate, context)
     private val sessionIds = SparseIntArray(4)
     private val startedSensors = HashSet<Int>(4)
     private val keyCodes = settings.keyCodes.entries.associateTo(mutableMapOf()) {

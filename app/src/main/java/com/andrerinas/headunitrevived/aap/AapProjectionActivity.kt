@@ -62,6 +62,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var initialY = 0f
     private var isPotentialGesture = false
     private var fpsTextView: TextView? = null
+    private var micIndicator: TextView? = null
+    private val micHideRunnable = Runnable { micIndicator?.visibility = View.GONE }
 
     private val videoWatchdogRunnable = object : Runnable {
         override fun run() {
@@ -216,6 +218,27 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             }
         }
 
+        // Mic status indicator — top-right corner, shows active source + level
+        run {
+            val container = findViewById<FrameLayout>(R.id.container)
+            micIndicator = TextView(this).apply {
+                setTextColor(Color.WHITE)
+                textSize = 11f
+                setTypeface(Typeface.MONOSPACE, Typeface.NORMAL)
+                setBackgroundColor(Color.parseColor("#80000000"))
+                setPadding(8, 4, 8, 4)
+                visibility = View.GONE
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    elevation = 100f
+                    translationZ = 100f
+                }
+            }
+            container.addView(micIndicator, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply { gravity = Gravity.TOP or Gravity.END; setMargins(0, 20, 20, 0) })
+        }
+
         videoDecoder.dimensionsListener = this
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -266,6 +289,28 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             // becomes available.
                             if (isSurfaceSet) {
                                 commManager.startReading()
+                            }
+                            // Wire up mic status indicator
+                            commManager.micStatusListener = object : com.andrerinas.headunitrevived.decoder.MicRecorder.MicStatusListener {
+                                override fun onMicStatus(sourceName: String, rmsDb: Float, isActive: Boolean) {
+                                    runOnUiThread {
+                                        if (!isActive) {
+                                            micIndicator?.visibility = View.GONE
+                                            return@runOnUiThread
+                                        }
+                                        val color = when {
+                                            rmsDb > -50f -> Color.GREEN
+                                            rmsDb > -70f -> Color.YELLOW
+                                            else -> Color.RED
+                                        }
+                                        micIndicator?.setTextColor(color)
+                                        micIndicator?.text = "MIC: $sourceName ${String.format("%.0f", rmsDb)}dB"
+                                        micIndicator?.visibility = View.VISIBLE
+                                        // Auto-hide after 5s of no updates
+                                        watchdogHandler.removeCallbacks(micHideRunnable)
+                                        watchdogHandler.postDelayed(micHideRunnable, 5000)
+                                    }
+                                }
                             }
                         }
                         else -> {}

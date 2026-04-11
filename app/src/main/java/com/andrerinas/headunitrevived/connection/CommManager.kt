@@ -111,6 +111,15 @@ class CommManager(
     /** Callback for audio focus state changes (isPlaying). Set by AapService. */
     var onAudioFocusStateChanged: ((Boolean) -> Unit)? = null
 
+    /** Set mic status listener on the current transport's mic recorder. */
+    var micStatusListener: com.andrerinas.headunitrevived.decoder.MicRecorder.MicStatusListener?
+        get() = _transport?.micRecorder?.micStatusListener
+        set(value) { _transport?.micRecorder?.micStatusListener = value }
+
+    /** Active mic source name, or "None" if not recording. */
+    val activeMicSourceName: String
+        get() = _transport?.micRecorder?.activeSourceName ?: "None"
+
     /** @Volatile: written on IO thread, read on Main and IO threads. */
     @Volatile private var _transport: AapTransport? = null
     @Volatile private var _connection: AccessoryConnection? = null

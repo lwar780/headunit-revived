@@ -54,6 +54,9 @@ class AapProtocolRecorder(
     /** Car fingerprint hash (set by AapService during handshake). */
     var carFingerprint: String = ""
 
+    /** Active mic source name (set by AapService for metadata). */
+    var activeMicSource: String = "unknown"
+
     /**
      * Check if recording should be active based on API level and settings.
      */
@@ -174,7 +177,8 @@ class AapProtocolRecorder(
             errorType = errorType.get(),
             errorFrameIndex = errorFrameIndex.get(),
             durationMs = durationMs,
-            flags = if (errorType.get().isNotEmpty()) 0x01 else 0x00
+            flags = if (errorType.get().isNotEmpty()) 0x01 else 0x00,
+            activeMicSource = activeMicSource
         )
 
         val file = SessionWriter.writeSession(context, sessionId.get(), frames, metadata)
