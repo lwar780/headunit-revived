@@ -425,7 +425,11 @@ class AapTransport(
         }
     }
 
+    /** Optional session recorder — set by AapService when recording is active. */
+    internal var recorder: com.andrerinas.headunitrevived.testing.AapProtocolRecorder? = null
+
     fun send(message: AapMessage) {
+        recorder?.recordMessage(message, com.andrerinas.headunitrevived.testing.SessionFrame.Direction.TO_CAR)
         val handler = sendHandler
         if (handler == null) {
             AppLog.i("Cannot send message, handler is null (quitting?)")

@@ -465,6 +465,10 @@ class Settings(context: Context) {
     var appThemeManualEnd: Int
         get() = prefs.getInt("app-theme-manual-end", 420)
         set(value) { prefs.edit().putInt("app-theme-manual-end", value).apply() }
+    var sessionRecordingEnabled: Boolean
+        get() = prefs.getBoolean("session-recording-enabled", false)
+        set(value) { prefs.edit().putBoolean("session-recording-enabled", value).apply() }
+
     var showFpsCounter: Boolean
         get() = prefs.getBoolean("show-fps-counter", false)
         set(value) {

@@ -21,8 +21,12 @@ internal class AapMessageHandlerType(
     private val aapNavigation = AapNavigation(context, settings)
     private var videoPacketCount = 0
 
+    /** Optional session recorder — set by AapService when recording is active. */
+    internal var recorder: com.andrerinas.headunitrevived.testing.AapProtocolRecorder? = null
+
     @Throws(AapMessageHandler.HandleException::class)
     override fun handle(message: AapMessage) {
+        recorder?.recordMessage(message, com.andrerinas.headunitrevived.testing.SessionFrame.Direction.FROM_CAR)
 
         val msgType = message.type
         val flags = message.flags

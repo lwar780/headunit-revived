@@ -80,6 +80,11 @@ class App : Application() {
             bootChannel.description = "Shown once after boot to open the app"
             bootChannel.setShowBadge(false)
             component.notificationManager.createNotificationChannel(bootChannel)
+
+            val recordingChannel = NotificationChannel(sessionRecordingChannel, "Session Recording", NotificationManager.IMPORTANCE_LOW)
+            recordingChannel.description = "Shown when AAP protocol recording is active"
+            recordingChannel.setShowBadge(false)
+            component.notificationManager.createNotificationChannel(recordingChannel)
         }
 
         // Register the main broadcast receiver safely for Android 14+ using ContextCompat
@@ -89,6 +94,7 @@ class App : Application() {
     companion object {
         const val defaultChannel = "headunit_service_v2"
         const val bootStartChannel = "headunit_boot_start"
+        const val sessionRecordingChannel = "headunit_session_recording"
         var appThemeManager: AppThemeManager? = null
 
         fun get(context: Context): App {
