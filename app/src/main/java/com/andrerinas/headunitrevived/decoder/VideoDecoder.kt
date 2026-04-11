@@ -184,7 +184,9 @@ class VideoDecoder(private val settings: Settings) {
                 if (mSurface == null || !mSurface!!.isValid) return
                 if (mWidth == 0 || mHeight == 0) return 
                 
-                start(typeToUse.mimeType, settings.forceSoftwareDecoding || forceSoftware, mWidth, mHeight)
+                if (!startWithFallback(typeToUse.mimeType, settings.forceSoftwareDecoding || forceSoftware, mWidth, mHeight)) {
+                    return // All codec attempts failed
+                }
             }
 
             if (codec == null) return
@@ -300,39 +302,68 @@ class VideoDecoder(private val settings: Settings) {
     }
 
     /**
-     * Configures and starts the native MediaCodec.
+     * Tries hardware → software → reduced input buffer fallbacks.
+     * Returns true if a codec was successfully started.
      */
-    private fun start(mimeType: String, forceSoftware: Boolean, width: Int, height: Int) {
+    private fun startWithFallback(mimeType: String, forceSoftware: Boolean, width: Int, height: Int): Boolean {
+        // Attempt 1: preferred codec (hardware unless forceSoftware)
+        if (tryStartCodec(mimeType, !forceSoftware, width, height, false)) return true
+
+        // Attempt 2: if hardware failed, try software
+        if (!forceSoftware) {
+            AppLog.w("Hardware decoder failed, trying software decoder")
+            if (tryStartCodec(mimeType, false, width, height, false)) return true
+        }
+
+        // Attempt 3: software with reduced input buffer (for low-RAM devices)
+        AppLog.w("Software decoder failed, trying with reduced buffer size")
+        if (tryStartCodec(mimeType, false, width, height, true)) return true
+
+        AppLog.e("All decoder attempts failed for ${width}x${height} $mimeType")
+        return false
+    }
+
+    /**
+     * Configures and starts the native MediaCodec. Returns true on success.
+     */
+    private fun tryStartCodec(mimeType: String, preferHardware: Boolean, width: Int, height: Int, reduceBuffers: Boolean): Boolean {
         try {
             startTime = System.nanoTime()
-            val bestCodec = findBestCodec(mimeType, !forceSoftware)
-                ?: throw IllegalStateException("No decoder available for $mimeType")
+            val bestCodec = findBestCodec(mimeType, preferHardware)
+                ?: return false
 
-            codec = MediaCodec.createByCodecName(bestCodec)
+            val newCodec = MediaCodec.createByCodecName(bestCodec)
             codecBufferInfo = MediaCodec.BufferInfo()
 
             val format = MediaFormat.createVideoFormat(mimeType, width, height)
-            
+
             // Apply Codec Specific Data (CSD) from parsed SPS/PPS/VPS
             if (mimeType == CodecType.H265.mimeType) {
                 val combined = (vps ?: byteArrayOf()) + (sps ?: byteArrayOf()) + (pps ?: byteArrayOf())
                 if (combined.isNotEmpty()) {
                     format.setByteBuffer("csd-0", ByteBuffer.wrap(combined))
                 }
-                format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 8 * 1024 * 1024)
+                // Reduced buffer for low-RAM: 2MB instead of 8MB
+                format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, if (reduceBuffers) 2 * 1024 * 1024 else 8 * 1024 * 1024)
             } else {
                 if (sps != null) format.setByteBuffer("csd-0", ByteBuffer.wrap(sps!!))
                 if (pps != null) format.setByteBuffer("csd-1", ByteBuffer.wrap(pps!!))
-                format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 2 * 1024 * 1024)
+                // Reduced buffer for low-RAM: 512KB instead of 2MB
+                format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, if (reduceBuffers) 512 * 1024 else 2 * 1024 * 1024)
             }
 
-            if (!mSurface!!.isValid) throw IllegalStateException("Surface not valid")
+            if (!mSurface!!.isValid) {
+                newCodec.release()
+                return false
+            }
 
-            AppLog.i("Configuring decoder: $bestCodec for ${width}x${height}")
-            codec?.configure(format, mSurface, null, 0)
-            try { codec?.setVideoScalingMode(MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT) } catch (e: Exception) {}
-            codec?.start()
-            
+            AppLog.i("Configuring decoder: $bestCodec for ${width}x${height} (hw=$preferHardware, reduceBuf=$reduceBuffers)")
+            newCodec.configure(format, mSurface, null, 0)
+            try { newCodec.setVideoScalingMode(MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT) } catch (_: Exception) {}
+            newCodec.start()
+
+            codec = newCodec
+
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 @Suppress("DEPRECATION") inputBuffers = codec?.inputBuffers
             }
@@ -343,11 +374,16 @@ class VideoDecoder(private val settings: Settings) {
                 com.andrerinas.headunitrevived.utils.LegacyOptimizer.setHighPriority()
                 outputThreadLoop()
             }.apply { name = "VideoDecoder-Output"; start() }
-            
-            AppLog.i("Codec initialized: $bestCodec")
+
+            AppLog.i("Codec initialized: $bestCodec (hw=$preferHardware, reduceBuf=$reduceBuffers)")
+            return true
         } catch (e: Exception) {
-            AppLog.e("Failed to start decoder", e)
-            codec = null; running = false
+            AppLog.e("Decoder start failed (hw=$preferHardware, reduceBuf=$reduceBuffers): ${e.message}")
+            try { codec?.stop() } catch (_: Exception) {}
+            try { codec?.release() } catch (_: Exception) {}
+            codec = null
+            running = false
+            return false
         }
     }
 
