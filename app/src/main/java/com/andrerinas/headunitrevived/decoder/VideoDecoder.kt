@@ -346,12 +346,13 @@ class VideoDecoder(private val settings: Settings) {
      * Configures and starts the native MediaCodec. Returns true on success.
      */
     private fun tryStartCodec(mimeType: String, preferHardware: Boolean, width: Int, height: Int, reduceBuffers: Boolean): Boolean {
+        var newCodec: MediaCodec? = null
         try {
             startTime = System.nanoTime()
             val bestCodec = findBestCodec(mimeType, preferHardware)
                 ?: return false
 
-            val newCodec = MediaCodec.createByCodecName(bestCodec)
+            newCodec = MediaCodec.createByCodecName(bestCodec)
             codecBufferInfo = MediaCodec.BufferInfo()
 
             val format = MediaFormat.createVideoFormat(mimeType, width, height)
@@ -398,8 +399,8 @@ class VideoDecoder(private val settings: Settings) {
             return true
         } catch (e: Exception) {
             AppLog.e("Decoder start failed (hw=$preferHardware, reduceBuf=$reduceBuffers): ${e.message}")
-            try { newCodec.stop() } catch (_: Exception) {}
-            try { newCodec.release() } catch (_: Exception) {}
+            try { newCodec?.stop() } catch (_: Exception) {}
+            try { newCodec?.release() } catch (_: Exception) {}
             // Wait for OMX to fully release hardware resources before next attempt
             try { Thread.sleep(100) } catch (_: InterruptedException) {}
             codec = null
