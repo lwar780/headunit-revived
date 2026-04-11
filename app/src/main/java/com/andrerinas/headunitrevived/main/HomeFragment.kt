@@ -367,6 +367,15 @@ class HomeFragment : Fragment() {
             }
         }
 
+        usbPanel.setOnLongClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+            val controller = findNavController()
+            if (controller.currentDestination?.id == R.id.homeFragment) {
+                controller.navigate(R.id.action_homeFragment_to_usbListFragment)
+            }
+            true
+        }
+
         settingsGear.setOnClickListener {
             val intent = Intent(requireContext(), SettingsActivity::class.java)
             startActivity(intent)
@@ -408,6 +417,15 @@ class HomeFragment : Fragment() {
                     }
                 }
             }
+        }
+
+        wifiPanel.setOnLongClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+            val controller = findNavController()
+            if (controller.currentDestination?.id == R.id.homeFragment) {
+                controller.navigate(R.id.action_homeFragment_to_networkListFragment)
+            }
+            true
         }
     }
 
