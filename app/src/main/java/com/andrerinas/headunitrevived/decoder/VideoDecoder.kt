@@ -115,16 +115,8 @@ class VideoDecoder(private val settings: Settings) {
                 }
             } catch (e: Exception) {}
             outputThread = null
-            
-            try {
-                codec?.stop()
-            } catch (e: Exception) {}
-            try {
-                codec?.release()
-            } catch (e: Exception) {
-                AppLog.e("Error releasing decoder", e)
-            }
-            
+
+            val releasingCodec = codec
             codec = null
             inputBuffers = null
             legacyFrameBuffer = null
@@ -134,6 +126,23 @@ class VideoDecoder(private val settings: Settings) {
             sps = null
             pps = null
             lastFrameRenderedMs = 0L
+
+            if (releasingCodec != null) {
+                try {
+                    releasingCodec.stop()
+                } catch (e: Exception) {}
+                try {
+                    releasingCodec.release()
+                } catch (e: Exception) {
+                    AppLog.e("Error releasing decoder", e)
+                }
+                // OMX codec release is async on many SoCs — the hardware buffers
+                // aren't freed until the OMX component fully transitions to Loaded.
+                // Without this delay, a new createByCodecName() can fail with ENOMEM
+                // because the old instance still holds the hardware resources.
+                try { Thread.sleep(150) } catch (_: InterruptedException) {}
+            }
+
             AppLog.i("Decoder stopped: $reason")
         }
     }
@@ -304,8 +313,18 @@ class VideoDecoder(private val settings: Settings) {
     /**
      * Tries hardware → software → reduced input buffer fallbacks.
      * Returns true if a codec was successfully started.
+     *
+     * Always calls stop() first to ensure any previous codec instance is fully
+     * released — prevents ENOMEM on reconnect when OMX hasn't freed resources yet.
      */
     private fun startWithFallback(mimeType: String, forceSoftware: Boolean, width: Int, height: Int): Boolean {
+        // Defensive: release any lingering codec before allocating a new one.
+        // This is the primary fix for ENOMEM on reconnect — the singleton VideoDecoder
+        // may still hold a hardware codec from the previous AapTransport session.
+        if (codec != null) {
+            stop("pre-start cleanup")
+        }
+
         // Attempt 1: preferred codec (hardware unless forceSoftware)
         if (tryStartCodec(mimeType, !forceSoftware, width, height, false)) return true
 
@@ -379,8 +398,10 @@ class VideoDecoder(private val settings: Settings) {
             return true
         } catch (e: Exception) {
             AppLog.e("Decoder start failed (hw=$preferHardware, reduceBuf=$reduceBuffers): ${e.message}")
-            try { codec?.stop() } catch (_: Exception) {}
-            try { codec?.release() } catch (_: Exception) {}
+            try { newCodec.stop() } catch (_: Exception) {}
+            try { newCodec.release() } catch (_: Exception) {}
+            // Wait for OMX to fully release hardware resources before next attempt
+            try { Thread.sleep(100) } catch (_: InterruptedException) {}
             codec = null
             running = false
             return false
