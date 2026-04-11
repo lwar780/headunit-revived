@@ -16,7 +16,8 @@
             android:id="@+id/splash_logo"
             android:layout_width="160dp"
             android:layout_height="160dp"
-            android:src="@mipmap/ic_launcher_playstore" />
+            android:src="@mipmap/ic_launcher_playstore"
+            android:contentDescription="@string/app_name" />
 
         <TextView
             android:id="@+id/text_headunit"

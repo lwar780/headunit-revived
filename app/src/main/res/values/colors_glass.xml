@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Semantic Glass Tints (Default Dark Mode) -->
+    <!-- Format: 85% opacity (#D9) + desaturated tint -->
+    <color name="glass_idle">#D91A2744</color>
+    <color name="glass_ready">#D90D4A3E</color>
+    <color name="glass_active">#D91A3D5C</color>
+    <color name="glass_warning">#D94A3000</color>
+    <color name="glass_error">#D94A1A1A</color>
+
+    <!-- Structural Colors -->
+    <color name="glass_border">#1AFFFFFF</color> <!-- White @ 10% -->
+    <color name="glass_border_active">#4D009688</color> <!-- Brand teal @ 30% -->
+    <color name="glass_accent_glow">#4D009688</color> <!-- Brand teal @ 30% -->
+    <color name="glass_scrim">#80000000</color> <!-- Black @ 50% -->
+
+    <!-- Status Badge Dots -->
+    <color name="status_connected">#4CAF50</color>
+    <color name="status_searching">#FFC107</color>
+    <color name="status_disconnected">#9E9E9E</color>
+
+    <!-- Light Mode Frosted Variants -->
+    <color name="glass_idle_light">#D9E8EDF5</color>
+    <color name="glass_ready_light">#D9E0F5ED</color>
+    <color name="glass_active_light">#D9E0ECF5</color>
+</resources>

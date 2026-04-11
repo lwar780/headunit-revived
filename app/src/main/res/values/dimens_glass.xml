@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Typography Scale -->
+    <dimen name="glass_text_display">32sp</dimen>
+    <dimen name="glass_text_headline">24sp</dimen>
+    <dimen name="glass_text_body_large">18sp</dimen>
+    <dimen name="glass_text_body">16sp</dimen>
+    <dimen name="glass_text_caption">14sp</dimen>
+    <dimen name="glass_text_mono">13sp</dimen>
+
+    <!-- Corner Radius System -->
+    <dimen name="glass_radius_panel">28dp</dimen>
+    <dimen name="glass_radius_card">16dp</dimen>
+    <dimen name="glass_radius_pill">999dp</dimen>
+    <dimen name="glass_radius_button">14dp</dimen>
+
+    <!-- Spacing System -->
+    <dimen name="glass_spacing_xs">4dp</dimen>
+    <dimen name="glass_spacing_sm">8dp</dimen>
+    <dimen name="glass_spacing_md">16dp</dimen>
+    <dimen name="glass_spacing_lg">24dp</dimen>
+    <dimen name="glass_spacing_xl">40dp</dimen>
+
+    <!-- Component Dimensions -->
+    <dimen name="glass_status_bar_height">56dp</dimen>
+    <dimen name="glass_min_touch_target">56dp</dimen>
+    <dimen name="glass_panel_icon_size">56dp</dimen>
+</resources>

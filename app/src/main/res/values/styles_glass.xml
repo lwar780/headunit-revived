@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TextAppearance.Glass.Display -->
+    <style name="TextAppearance.Glass.Display" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:textSize">@dimen/glass_text_display</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- TextAppearance.Glass.Headline -->
+    <style name="TextAppearance.Glass.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textSize">@dimen/glass_text_headline</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- TextAppearance.Glass.BodyLarge -->
+    <style name="TextAppearance.Glass.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">@dimen/glass_text_body_large</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- TextAppearance.Glass.Body -->
+    <style name="TextAppearance.Glass.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">@dimen/glass_text_body</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- TextAppearance.Glass.Caption -->
+    <style name="TextAppearance.Glass.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">@dimen/glass_text_caption</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_second</item>
+    </style>
+
+    <!-- Glass Button Style -->
+    <style name="Widget.Glass.Button" parent="Widget.Material3.Button">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/glass_radius_button</item>
+        <item name="android:minHeight">@dimen/glass_min_touch_target</item>
+    </style>
+</resources>

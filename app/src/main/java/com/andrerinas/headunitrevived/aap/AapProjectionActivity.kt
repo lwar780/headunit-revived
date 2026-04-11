@@ -198,6 +198,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 setBackgroundColor(Color.parseColor("#80000000"))
                 setPadding(10, 5, 10, 5)
                 text = "FPS: --"
+                accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
                 // Lift it above everything
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     elevation = 100f
@@ -214,7 +215,10 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             container.addView(fpsTextView, params)
 
             videoDecoder.onFpsChanged = { fps ->
-                runOnUiThread { fpsTextView?.text = "FPS: $fps" }
+                runOnUiThread { 
+                    fpsTextView?.text = "FPS: $fps"
+                    fpsTextView?.contentDescription = getString(R.string.cd_fps_counter, fps)
+                }
             }
         }
 
@@ -228,6 +232,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 setBackgroundColor(Color.parseColor("#80000000"))
                 setPadding(8, 4, 8, 4)
                 visibility = View.GONE
+                accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     elevation = 100f
                     translationZ = 100f
@@ -305,6 +310,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                                         }
                                         micIndicator?.setTextColor(color)
                                         micIndicator?.text = "MIC: $sourceName ${String.format("%.0f", rmsDb)}dB"
+                                        micIndicator?.contentDescription = getString(R.string.cd_mic_indicator, sourceName, String.format("%.0f", rmsDb))
                                         micIndicator?.visibility = View.VISIBLE
                                         // Auto-hide after 5s of no updates
                                         watchdogHandler.removeCallbacks(micHideRunnable)

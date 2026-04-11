@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Content descriptions for home screen -->
+    <string name="cd_self_mode_panel">Self Mode. %1$s. Double tap to connect.</string>
+    <string name="cd_usb_panel">USB Connection. %1$s. Double tap to connect.</string>
+    <string name="cd_wifi_panel">WiFi Connection. %1$s. Double tap to connect.</string>
+    <string name="cd_settings_gear">Settings</string>
+    <string name="cd_exit_button">Exit application</string>
+    <string name="cd_status_bar">Audio status</string>
+    <string name="cd_audio_output">Audio output: %1$s</string>
+    <string name="cd_mic_source">Microphone: %1$s</string>
+
+    <!-- Dynamic state descriptions -->
+    <string name="cd_status_not_connected">Not connected</string>
+    <string name="cd_status_connecting">Connecting</string>
+    <string name="cd_status_connected">Connected</string>
+    <string name="cd_status_connected_to">Connected to %1$s</string>
+    <string name="cd_status_searching">Searching for devices</string>
+    <string name="cd_status_error">Error: %1$s</string>
+    <string name="cd_status_ready">Ready</string>
+    <string name="cd_status_warning">Warning</string>
+
+    <!-- Projection overlay descriptions -->
+    <string name="cd_projection_loading">Android Auto is starting. Please wait.</string>
+    <string name="cd_projection_reconnecting">Connection interrupted. %1$s</string>
+    <string name="cd_disconnect_button">Disconnect from Android Auto</string>
+    <string name="cd_fps_counter">Frames per second: %1$d</string>
+    <string name="cd_mic_indicator">Microphone active. Source: %1$s. Level: %2$s</string>
+
+    <!-- Settings descriptions -->
+    <string name="cd_toggle_on">%1$s. On. Double tap to turn off.</string>
+    <string name="cd_toggle_off">%1$s. Off. Double tap to turn on.</string>
+    <string name="cd_slider">%1$s. Current value: %2$s. Swipe to adjust.</string>
+</resources>

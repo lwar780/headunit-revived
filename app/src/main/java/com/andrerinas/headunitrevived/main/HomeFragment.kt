@@ -1,5 +1,14 @@
 package com.andrerinas.headunitrevived.main
 
+import com.andrerinas.headunitrevived.ui.GlassView
+import com.andrerinas.headunitrevived.ui.GlassMotion.applySpringPress
+import com.andrerinas.headunitrevived.ui.GlassMotion.springFadeIn
+import android.media.AudioManager
+import android.media.AudioDeviceInfo
+import android.media.AudioDeviceCallback
+import androidx.core.content.getSystemService
+import com.andrerinas.headunitrevived.connection.CommManager.ConnectionState
+import com.andrerinas.headunitrevived.ui.GlassView.GlassState
 import android.content.Context
 import android.content.Intent
 import android.hardware.usb.UsbManager
@@ -56,25 +65,43 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private lateinit var self_mode_button: Button
-    private lateinit var usb: Button
-    private lateinit var settings: Button
-    private lateinit var wifi: Button
-    private lateinit var wifi_text_view: TextView
+    private lateinit var selfModePanel: GlassView
+    private lateinit var usbPanel: GlassView
+    private lateinit var wifiPanel: GlassView
+    private lateinit var settingsPanel: GlassView
+    private lateinit var settingsGear: View
+    private lateinit var statusBar: GlassView
+    private lateinit var audioOutputText: TextView
+    private lateinit var micStatusText: TextView
     private lateinit var exitButton: Button
-    private lateinit var self_mode_text: TextView
+    
+    private lateinit var selfModeStatus: TextView
+    private lateinit var usbStatus: TextView
+    private lateinit var wifiStatus: TextView
+
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
 
     private fun updateWifiButtonFeedback(scanning: Boolean) {
         if (scanning) {
-            wifi_text_view.text = getString(R.string.searching)
-            wifi.alpha = 0.6f
+            wifiStatus.text = getString(R.string.searching)
+            wifiPanel.setGlassState(GlassState.ACTIVE)
         } else {
-            wifi_text_view.text = getString(R.string.wifi)
-            wifi.alpha = 1.0f
+            wifiStatus.text = getString(R.string.cd_status_not_connected)
+            wifiPanel.setGlassState(GlassState.IDLE)
         }
     }
+
+    private val audioDeviceCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        object : AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+                updateAudioStatus()
+            }
+            override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+                updateAudioStatus()
+            }
+        }
+    } else null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_home, container, false)
@@ -83,20 +110,30 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        self_mode_button = view.findViewById(R.id.self_mode_button)
-        usb = view.findViewById(R.id.usb_button)
-        settings = view.findViewById(R.id.settings_button)
-        wifi = view.findViewById(R.id.wifi_button)
-        wifi_text_view = view.findViewById(R.id.wifi_text)
+        selfModePanel = view.findViewById(R.id.self_mode_panel)
+        usbPanel = view.findViewById(R.id.usb_panel)
+        wifiPanel = view.findViewById(R.id.wifi_panel)
+        settingsPanel = view.findViewById(R.id.settings_panel)
+        settingsGear = view.findViewById(R.id.settings_gear)
+        statusBar = view.findViewById(R.id.status_bar)
+        audioOutputText = view.findViewById(R.id.audio_output_text)
+        micStatusText = view.findViewById(R.id.mic_status_text)
         exitButton = view.findViewById(R.id.exit_button)
-        self_mode_text = view.findViewById(R.id.self_mode_text)
+        
+        selfModeStatus = view.findViewById(R.id.self_mode_status)
+        usbStatus = view.findViewById(R.id.usb_status)
+        wifiStatus = view.findViewById(R.id.wifi_status)
 
         setupListeners()
-        updateProjectionButtonText()
+        
+        // Initial state update
+        updatePanelStates(commManager.connectionState.value)
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                commManager.connectionState.collect { updateProjectionButtonText() }
+                commManager.connectionState.collect { state ->
+                    updatePanelStates(state)
+                }
             }
         }
 
@@ -106,7 +143,26 @@ class HomeFragment : Fragment() {
             }
         }
 
+        // Apply motion
+        listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel, statusBar).forEach { it.applySpringPress() }
+        
+        // Staggered entry
+        val panels = listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel)
+        panels.forEachIndexed { index, panel ->
+            if (panel.visibility != View.GONE) panel.springFadeIn(index * 60L)
+        }
+        statusBar.springFadeIn(panels.size * 60L)
+
         val appSettings = App.provide(requireContext()).settings
+        
+        // Toggle gear vs setup based on wizard completion
+        if (!appSettings.hasCompletedSetupWizard) {
+            settingsPanel.visibility = View.VISIBLE
+            settingsGear.visibility = View.GONE
+        } else {
+            settingsPanel.visibility = View.GONE
+            settingsGear.visibility = View.VISIBLE
+        }
 
         if (appSettings.autoStartOnScreenOn || appSettings.autoStartOnBoot) {
             ContextCompat.startForegroundService(requireContext(),
@@ -230,68 +286,62 @@ class HomeFragment : Fragment() {
             })
     }
 
-    private val originalBackgrounds = mapOf(
-        R.id.self_mode_button to R.drawable.gradient_blue,
-        R.id.usb_button to R.drawable.gradient_orange,
-        R.id.wifi_button to R.drawable.gradient_purple,
-        R.id.settings_button to R.drawable.gradient_darkblue
-    )
-
-    private fun applyMonochromeStyle() {
-        val monochromeBackground = ContextCompat.getDrawable(requireContext(), R.drawable.gradient_monochrome)
-        val grayTint = ColorStateList.valueOf(0xFF808080.toInt())
-        listOf(self_mode_button, usb, wifi, settings).forEach { button ->
-            button.background = monochromeBackground?.constantState?.newDrawable()?.mutate()
-            (button as? com.google.android.material.button.MaterialButton)?.iconTint = grayTint
+    private fun updatePanelStates(state: ConnectionState) {
+        // Map ConnectionState to GlassState and status text
+        val (glassState, statusText) = when (state) {
+            is ConnectionState.Disconnected -> GlassState.IDLE to getString(R.string.cd_status_not_connected)
+            is ConnectionState.Connecting -> GlassState.ACTIVE to getString(R.string.cd_status_connecting)
+            is ConnectionState.Connected,
+            is ConnectionState.StartingTransport -> GlassState.ACTIVE to getString(R.string.cd_status_connected)
+            is ConnectionState.HandshakeComplete,
+            is ConnectionState.TransportStarted -> GlassState.READY to (state.toString().let { if (state is ConnectionState.HandshakeComplete) state.deviceName ?: getString(R.string.cd_status_ready) else getString(R.string.cd_status_ready) })
+            is ConnectionState.Error -> GlassState.ERROR to getString(R.string.cd_status_error, state.message)
         }
+
+        // Apply to panels (logic: only Self Mode shows specific state for now, 
+        // USB/WiFi show state when they are the active transport)
+        selfModePanel.setGlassState(glassState)
+        selfModeStatus.text = statusText
+        
+        // Dynamic content descriptions for a11y
+        selfModePanel.contentDescription = getString(R.string.cd_self_mode_panel, statusText)
+        usbPanel.contentDescription = getString(R.string.cd_usb_panel, if (state is ConnectionState.Disconnected) getString(R.string.cd_status_not_connected) else statusText)
+        wifiPanel.contentDescription = getString(R.string.cd_wifi_panel, if (state is ConnectionState.Disconnected) getString(R.string.cd_status_not_connected) else statusText)
     }
 
-    private fun restoreOriginalStyle() {
-        val whiteTint = ColorStateList.valueOf(0xFFFFFFFF.toInt())
-        val buttons = listOf(self_mode_button, usb, wifi, settings)
-        val ids = listOf(R.id.self_mode_button, R.id.usb_button, R.id.wifi_button, R.id.settings_button)
-        buttons.zip(ids).forEach { (button, id) ->
-            originalBackgrounds[id]?.let { drawableRes ->
-                button.background = ContextCompat.getDrawable(requireContext(), drawableRes)
+    private fun updateAudioStatus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val audioManager = requireContext().getSystemService<AudioManager>()
+            val outputs = audioManager?.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            // Simplistic heuristic for active output
+            val activeOutput = outputs?.firstOrNull { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES || it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+            val outputName = when (activeOutput?.type) {
+                AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> "Bluetooth"
+                AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_WIRED_HEADSET -> "Headphones"
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Speakers"
+                else -> "Default"
             }
-            (button as? com.google.android.material.button.MaterialButton)?.iconTint = whiteTint
-        }
-    }
-
-    private fun updateButtonStyle() {
-        val appSettings = App.provide(requireContext()).settings
-        val isNightActive = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val isDarkTheme = appSettings.appTheme == Settings.AppTheme.DARK ||
-                          appSettings.appTheme == Settings.AppTheme.EXTREME_DARK ||
-                          isNightActive
-        if (isDarkTheme && appSettings.monochromeIcons) {
-            applyMonochromeStyle()
+            audioOutputText.text = getString(R.string.cd_audio_output, outputName)
         } else {
-            restoreOriginalStyle()
+            audioOutputText.text = "Audio: System"
         }
+        
+        // Mic status from CommManager if available
+        val micSource = "Built-in" // Placeholder for now, real status comes via listener in Phase 3
+        micStatusText.text = getString(R.string.cd_mic_source, micSource)
     }
 
     private fun setupListeners() {
         exitButton.setOnClickListener {
             val appSettings = App.provide(requireContext()).settings
-            val keepServiceAlive = appSettings.autoStartOnBoot ||
-                appSettings.autoStartOnScreenOn ||
-                (appSettings.autoStartOnUsb && appSettings.reopenOnReconnection)
-            if (keepServiceAlive) {
-                val disconnectIntent = Intent(requireContext(), AapService::class.java).apply {
-                    action = AapService.ACTION_DISCONNECT
-                }
-                ContextCompat.startForegroundService(requireContext(), disconnectIntent)
-            } else {
-                val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
-                    action = AapService.ACTION_STOP_SERVICE
-                }
-                ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
+            val stopServiceIntent = Intent(requireContext(), AapService::class.java).apply {
+                action = AapService.ACTION_STOP_SERVICE
             }
+            ContextCompat.startForegroundService(requireContext(), stopServiceIntent)
             requireActivity().finishAffinity()
         }
 
-        self_mode_button.setOnClickListener {
+        selfModePanel.setOnClickListener {
             if (commManager.isConnected) {
                 val aapIntent = Intent(requireContext(), AapProjectionActivity::class.java)
                 aapIntent.putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
@@ -301,46 +351,39 @@ class HomeFragment : Fragment() {
             }
         }
 
-        usb.setOnClickListener {
+        usbPanel.setOnClickListener {
             val controller = findNavController()
             if (controller.currentDestination?.id == R.id.homeFragment) {
                 controller.navigate(R.id.action_homeFragment_to_usbListFragment)
             }
         }
 
-        settings.setOnClickListener {
+        settingsGear.setOnClickListener {
             val intent = Intent(requireContext(), SettingsActivity::class.java)
             startActivity(intent)
         }
 
-        wifi.setOnClickListener {
+        settingsPanel.setOnClickListener {
+            val intent = Intent(requireContext(), SettingsActivity::class.java)
+            startActivity(intent)
+        }
+
+        wifiPanel.setOnClickListener {
             val mode = App.provide(requireContext()).settings.wifiConnectionMode
             when (mode) {
-                1 -> { // Auto (Headunit Server) - One-Shot Scan
-                    if (commManager.isConnected) {
-                        // Already connected
-                    } else if (AapService.scanningState.value) {
-                        Toast.makeText(requireContext(), getString(R.string.already_scanning), Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), getString(R.string.searching_headunit_server), Toast.LENGTH_SHORT).show()
+                1 -> { // Auto (Headunit Server)
+                    if (!commManager.isConnected) {
                         val intent = Intent(requireContext(), AapService::class.java).apply {
                             action = AapService.ACTION_START_WIRELESS_SCAN
                         }
                         ContextCompat.startForegroundService(requireContext(), intent)
                     }
                 }
-                2 -> { // Helper (Wireless Launcher)
-                    if (commManager.isConnected) {
-                        // Already connected
-                    } else {
+                2 -> { // Helper
+                    if (!commManager.isConnected) {
                         val strategy = App.provide(requireContext()).settings.helperConnectionStrategy
-                        if (strategy == 2) {
-                            // Nearby Devices — show live discovery dialog
-                            showNearbyDeviceSelector()
-                        } else if (AapService.scanningState.value) {
-                            Toast.makeText(requireContext(), getString(R.string.already_searching_phone), Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(requireContext(), getString(R.string.searching_phone), Toast.LENGTH_SHORT).show()
+                        if (strategy == 2) showNearbyDeviceSelector()
+                        else {
                             val intent = Intent(requireContext(), AapService::class.java).apply {
                                 action = AapService.ACTION_START_WIRELESS_SCAN
                             }
@@ -348,10 +391,8 @@ class HomeFragment : Fragment() {
                         }
                     }
                 }
-                3 -> { // Native AA
-                    showNativeAaDeviceSelector()
-                }
-                else -> { // Manual (0) -> Open List
+                3 -> showNativeAaDeviceSelector()
+                else -> {
                     val controller = findNavController()
                     if (controller.currentDestination?.id == R.id.homeFragment) {
                         controller.navigate(R.id.action_homeFragment_to_networkListFragment)
@@ -359,33 +400,28 @@ class HomeFragment : Fragment() {
                 }
             }
         }
-
-        wifi.setOnLongClickListener {
-            val controller = findNavController()
-            if (controller.currentDestination?.id == R.id.homeFragment) {
-                controller.navigate(R.id.action_homeFragment_to_networkListFragment)
-            }
-            true
-        }
-    }
-
-    private fun updateProjectionButtonText() {
-        if (commManager.isConnected) {
-            self_mode_text.text = getString(R.string.to_android_auto)
-        } else {
-            self_mode_text.text = getString(R.string.self_mode)
-        }
     }
 
     override fun onResume() {
         super.onResume()
         AppLog.i("HomeFragment: onResume. isConnected=${commManager.isConnected}")
-        updateProjectionButtonText()
-        updateButtonStyle()
-        updateTextColors()
+        updateAudioStatus()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val audioManager = requireContext().getSystemService<AudioManager>()
+            audioManager?.registerAudioDeviceCallback(audioDeviceCallback, null)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val audioManager = requireContext().getSystemService<AudioManager>()
+            audioManager?.unregisterAudioDeviceCallback(audioDeviceCallback)
+        }
     }
 
     private fun showNativeAaDeviceSelector() {
+...
         val adapter = if (Build.VERSION.SDK_INT >= 18) {
             (requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
         } else {
@@ -466,32 +502,6 @@ class HomeFragment : Fragment() {
                 )
             }
         }
-    }
-
-    private fun updateTextColors() {
-        val appSettings = App.provide(requireContext()).settings
-        val nightModeFlags = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        val isLightMode = nightModeFlags != Configuration.UI_MODE_NIGHT_YES
-
-        val labelViews = listOf(self_mode_text, wifi_text_view,
-            view?.findViewById<TextView>(R.id.usb_text),
-            view?.findViewById<TextView>(R.id.settings_text))
-
-        if (appSettings.useGradientBackground && isLightMode) {
-            val darkColor = Color.parseColor("#1a1a1a")
-            labelViews.filterNotNull().forEach { tv ->
-                tv.setTextColor(darkColor)
-                tv.setShadowLayer(2f, 0f, 0f, Color.WHITE)
-            }
-        } else {
-            val lightColor = Color.parseColor("#f7f7f7")
-            labelViews.filterNotNull().forEach { tv ->
-                tv.setTextColor(lightColor)
-                tv.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
-            }
-        }
-
-        exitButton.setTextColor(Color.WHITE)
     }
 
     companion object {

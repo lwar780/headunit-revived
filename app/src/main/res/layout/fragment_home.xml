@@ -1,188 +1,305 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_buttons_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Settings Gear (Top Right) -->
+    <ImageButton
+        android:id="@+id/settings_gear"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_margin="@dimen/glass_spacing_md"
+        android:background="@drawable/glass_pill_bg"
+        android:contentDescription="@string/cd_settings_gear"
+        android:elevation="4dp"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_settings_white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Dashboard Panels Container -->
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/main_buttons_layout"
+        android:id="@+id/panels_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        app:layout_constraintWidth_max="1200dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:padding="@dimen/glass_spacing_md"
+        app:layout_constraintBottom_toTopOf="@+id/status_bar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.4">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="1200dp">
 
-        <!-- Self Mode Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/self_mode_button"
+        <!-- Self Mode Panel -->
+        <com.andrerinas.headunitrevived.ui.GlassView
+            android:id="@+id/self_mode_panel"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:elevation="6dp"
-            app:layout_constraintDimensionRatio="1:1"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/usb_button"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/glass_spacing_xl"
+            android:clickable="true"
+            android:focusable="true"
+            app:glassCornerRadius="@dimen/glass_radius_panel"
+            app:glassState="idle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/usb_panel"
             app:layout_constraintHorizontal_chainStyle="spread"
-            android:layout_margin="40dp"
-            app:backgroundTint="@null"
-            android:background="@drawable/gradient_blue"
-            app:iconGravity="textStart"
-            app:icon="@drawable/ic_launch_white"
-            app:iconTint="#ffffff"
-            app:iconSize="72dp"
-            app:iconPadding="0dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp" />
-        <TextView
-            android:id="@+id/self_mode_text"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/glass_spacing_lg">
+
+                <ImageView
+                    android:layout_width="@dimen/glass_panel_icon_size"
+                    android:layout_height="@dimen/glass_panel_icon_size"
+                    android:src="@drawable/ic_launch_white"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Glass.BodyLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_sm"
+                    android:text="@string/self_mode" />
+
+                <TextView
+                    android:id="@+id/self_mode_status"
+                    style="@style/TextAppearance.Glass.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_xs"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/cd_status_not_connected" />
+            </LinearLayout>
+        </com.andrerinas.headunitrevived.ui.GlassView>
+
+        <!-- USB Panel -->
+        <com.andrerinas.headunitrevived.ui.GlassView
+            android:id="@+id/usb_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/self_mode_button"
-            app:layout_constraintStart_toStartOf="@+id/self_mode_button"
-            app:layout_constraintEnd_toEndOf="@+id/self_mode_button"
-            android:text="@string/self_mode"
-            android:textColor="@color/text_primary"
-            android:shadowColor="@color/text_shadow"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="8"
-            android:textSize="18sp"
-            android:textFontWeight="700"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="4dp" />
+            android:layout_margin="@dimen/glass_spacing_xl"
+            android:clickable="true"
+            android:focusable="true"
+            app:glassCornerRadius="@dimen/glass_radius_panel"
+            app:glassState="idle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/wifi_panel"
+            app:layout_constraintStart_toEndOf="@+id/self_mode_panel"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <!-- USB Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/usb_button"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:elevation="6dp"
-            app:layout_constraintDimensionRatio="1:1"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/self_mode_button"
-            app:layout_constraintEnd_toStartOf="@+id/wifi_button"
-            android:layout_margin="40dp"
-            app:backgroundTint="@null"
-            android:background="@drawable/gradient_orange"
-            app:iconGravity="textStart"
-            app:icon="@drawable/ic_usb_white"
-            app:iconTint="#ffffff"
-            app:iconSize="72dp"
-            app:iconPadding="0dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp" />
-        <TextView
-            android:id="@+id/usb_text"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/glass_spacing_lg">
+
+                <ImageView
+                    android:layout_width="@dimen/glass_panel_icon_size"
+                    android:layout_height="@dimen/glass_panel_icon_size"
+                    android:src="@drawable/ic_usb_white"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Glass.BodyLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_sm"
+                    android:text="@string/usb" />
+
+                <TextView
+                    android:id="@+id/usb_status"
+                    style="@style/TextAppearance.Glass.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_xs"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/cd_status_not_connected" />
+            </LinearLayout>
+        </com.andrerinas.headunitrevived.ui.GlassView>
+
+        <!-- WiFi Panel -->
+        <com.andrerinas.headunitrevived.ui.GlassView
+            android:id="@+id/wifi_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/usb_button"
-            app:layout_constraintStart_toStartOf="@+id/usb_button"
-            app:layout_constraintEnd_toEndOf="@+id/usb_button"
-            android:text="@string/usb"
-            android:textColor="@color/text_primary"
-            android:shadowColor="@color/text_shadow"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="8"
-            android:textSize="18sp"
-            android:textFontWeight="700"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="4dp" />
+            android:layout_margin="@dimen/glass_spacing_xl"
+            android:clickable="true"
+            android:focusable="true"
+            app:glassCornerRadius="@dimen/glass_radius_panel"
+            app:glassState="idle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/settings_panel"
+            app:layout_constraintStart_toEndOf="@+id/usb_panel"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <!-- WiFi Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/wifi_button"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:elevation="6dp"
-            app:layout_constraintDimensionRatio="1:1"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/usb_button"
-            app:layout_constraintEnd_toStartOf="@+id/settings_button"
-            android:layout_margin="40dp"
-            app:backgroundTint="@null"
-            android:background="@drawable/gradient_purple"
-            app:iconGravity="textStart"
-            app:icon="@drawable/ic_network_wifi_white"
-            app:iconTint="#ffffff"
-            app:iconSize="72dp"
-            app:iconPadding="0dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp" />
-        <TextView
-            android:id="@+id/wifi_text"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/glass_spacing_lg">
+
+                <ImageView
+                    android:layout_width="@dimen/glass_panel_icon_size"
+                    android:layout_height="@dimen/glass_panel_icon_size"
+                    android:src="@drawable/ic_network_wifi_white"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Glass.BodyLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_sm"
+                    android:text="@string/wifi" />
+
+                <TextView
+                    android:id="@+id/wifi_status"
+                    style="@style/TextAppearance.Glass.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_xs"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/cd_status_not_connected" />
+            </LinearLayout>
+        </com.andrerinas.headunitrevived.ui.GlassView>
+
+        <!-- Settings Panel (First-run only) -->
+        <com.andrerinas.headunitrevived.ui.GlassView
+            android:id="@+id/settings_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/wifi_button"
-            app:layout_constraintStart_toStartOf="@+id/wifi_button"
-            app:layout_constraintEnd_toEndOf="@+id/wifi_button"
-            android:text="@string/wifi"
-            android:textColor="@color/text_primary"
-            android:shadowColor="@color/text_shadow"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="8"
-            android:textSize="18sp"
-            android:textFontWeight="700"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="4dp" />
-
-        <!-- Settings Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/settings_button"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:elevation="6dp"
-            app:iconGravity="textStart"
-            app:layout_constraintDimensionRatio="1:1"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/wifi_button"
+            android:layout_margin="@dimen/glass_spacing_xl"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            app:glassCornerRadius="@dimen/glass_radius_panel"
+            app:glassState="idle"
+            app:glassTint="@color/brand_teal"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_margin="40dp"
-            app:backgroundTint="@null"
-            android:background="@drawable/gradient_darkblue"
-            app:icon="@drawable/ic_settings_white"
-            app:iconTint="#ffffff"
-            app:iconSize="72dp"
-            app:iconPadding="0dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp" />
-        <TextView
-            android:id="@+id/settings_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/settings_button"
-            app:layout_constraintStart_toStartOf="@+id/settings_button"
-            app:layout_constraintEnd_toEndOf="@+id/settings_button"
-            android:text="@string/settings"
-            android:textColor="@color/text_primary"
-            android:shadowColor="@color/text_shadow"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="8"
-            android:textSize="18sp"
-            android:textFontWeight="700"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="4dp" />
+            app:layout_constraintStart_toEndOf="@+id/wifi_panel"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/glass_spacing_lg">
+
+                <ImageView
+                    android:layout_width="@dimen/glass_panel_icon_size"
+                    android:layout_height="@dimen/glass_panel_icon_size"
+                    android:src="@drawable/ic_settings_white"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Glass.BodyLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_sm"
+                    android:text="Setup" />
+
+                <TextView
+                    style="@style/TextAppearance.Glass.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_xs"
+                    android:text="Configure App"
+                    android:textColor="#B3FFFFFF" />
+            </LinearLayout>
+        </com.andrerinas.headunitrevived.ui.GlassView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Audio/Mic Status Bar (Bottom) -->
+    <com.andrerinas.headunitrevived.ui.GlassView
+        android:id="@+id/status_bar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/glass_status_bar_height"
+        android:layout_margin="@dimen/glass_spacing_md"
+        android:clickable="true"
+        android:focusable="true"
+        app:glassCornerRadius="@dimen/glass_radius_pill"
+        app:layout_constraintBottom_toTopOf="@+id/exit_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_max="600dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/glass_spacing_md"
+            android:paddingEnd="@dimen/glass_spacing_md">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_launch_white"
+                app:tint="@color/text_second" />
+
+            <TextView
+                android:id="@+id/audio_output_text"
+                style="@style/TextAppearance.Glass.Caption"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/glass_spacing_sm"
+                android:layout_weight="1"
+                android:accessibilityLiveRegion="polite"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Audio: Speakers" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="@dimen/glass_spacing_md"
+                android:layout_marginEnd="@dimen/glass_spacing_md"
+                android:background="@color/glass_border" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_refresh_white"
+                app:tint="@color/text_second" />
+
+            <TextView
+                android:id="@+id/mic_status_text"
+                style="@style/TextAppearance.Glass.Caption"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/glass_spacing_sm"
+                android:layout_weight="1"
+                android:accessibilityLiveRegion="polite"
+                android:ellipsize="end"
+                android:maxLines="1"
+                tools:text="Mic: Built-in" />
+        </LinearLayout>
+    </com.andrerinas.headunitrevived.ui.GlassView>
+
+    <!-- Exit Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/exit_button"
+        style="@style/Widget.Glass.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="16dp"
+        android:layout_margin="@dimen/glass_spacing_md"
+        android:contentDescription="@string/cd_exit_button"
         android:text="@string/exit"
-        app:backgroundTint="@color/material_grey_700"
-        android:textColor="@android:color/white"
-        app:cornerRadius="8dp" />
+        app:backgroundTint="@color/glass_idle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night Mode Tints (Slightly darker for OLED comfort) -->
+    <color name="glass_idle">#D90D1422</color>
+    <color name="glass_ready">#D906261F</color>
+    <color name="glass_active">#D90D1F2E</color>
+    <color name="glass_warning">#D9251800</color>
+    <color name="glass_error">#D9250D0D</color>
+
+    <!-- Brighter border for better definition in night mode -->
+    <color name="glass_border">#2AFFFFFF</color>
+</resources>

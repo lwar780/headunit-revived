@@ -143,7 +143,9 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
     class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.categoryTitle)
         fun bind(header: SettingItem.CategoryHeader) {
-            title.setText(header.titleResId)
+            val titleStr = itemView.context.getString(header.titleResId)
+            title.text = titleStr
+            itemView.contentDescription = "$titleStr section"
         }
     }
 
@@ -152,8 +154,10 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         private val settingValue: TextView = itemView.findViewById(R.id.settingValue)
         
         fun bind(setting: SettingItem.SettingEntry) {
-            settingName.setText(setting.nameResId)
+            val name = itemView.context.getString(setting.nameResId)
+            settingName.text = name
             settingValue.text = setting.value
+            itemView.contentDescription = "$name. Current value: ${setting.value}"
             itemView.setOnClickListener { setting.onClick(setting.stableId) }
         }
     }
@@ -164,16 +168,25 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         private val settingSwitch: Switch = itemView.findViewById(R.id.settingSwitch)
 
         fun bind(setting: SettingItem.ToggleSettingEntry) {
-            if (setting.nameOverride != null) settingName.text = setting.nameOverride
-            else settingName.setText(setting.nameResId)
+            val name = if (setting.nameOverride != null) setting.nameOverride else itemView.context.getString(setting.nameResId)
+            settingName.text = name
             settingDescription.setText(setting.descriptionResId)
             settingSwitch.setOnCheckedChangeListener(null)
             settingSwitch.isChecked = setting.isChecked
             settingSwitch.isEnabled = setting.isEnabled
             itemView.alpha = if (setting.isEnabled) 1.0f else 0.5f
             itemView.isClickable = setting.isEnabled
+            
+            // Accessibility
+            val status = if (setting.isChecked) itemView.context.getString(R.string.enabled) else itemView.context.getString(R.string.disabled)
+            val cd = itemView.context.getString(R.string.cd_toggle_on, name) // Simplified, assuming user knows double tap to toggle
+            settingSwitch.contentDescription = "$name. $status"
+            itemView.contentDescription = "$name. $status. ${itemView.context.getString(setting.descriptionResId)}"
+
             settingSwitch.setOnCheckedChangeListener { _, isChecked ->
                 setting.onCheckedChanged(isChecked)
+                val newStatus = if (isChecked) itemView.context.getString(R.string.enabled) else itemView.context.getString(R.string.disabled)
+                settingSwitch.contentDescription = "$name. $newStatus"
             }
             itemView.setOnClickListener {
                 if (setting.isEnabled) settingSwitch.toggle()
@@ -203,13 +216,18 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
         private val settingSlider: Slider = itemView.findViewById(R.id.settingSlider)
 
         fun bind(setting: SettingItem.SliderSettingEntry) {
-            settingName.setText(setting.nameResId)
+            val name = itemView.context.getString(setting.nameResId)
+            settingName.text = name
             settingValue.text = setting.value
             settingSlider.clearOnChangeListeners()
             settingSlider.valueFrom = setting.valueFrom
             settingSlider.valueTo = setting.valueTo
             settingSlider.stepSize = setting.stepSize
             settingSlider.value = setting.sliderValue
+            
+            // Accessibility
+            settingSlider.contentDescription = "$name. ${setting.value}"
+
             settingSlider.addOnChangeListener { _, value, fromUser ->
                 if (fromUser) {
                     setting.onValueChanged(value)

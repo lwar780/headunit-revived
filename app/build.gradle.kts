@@ -47,6 +47,9 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.3.5")
     implementation("androidx.navigation:navigation-ui-ktx:2.3.5")
 
+    // Dynamic Animation (Spring)
+    implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
+
     // DexMaker for runtime subclassing (Hotspot Fix)
     implementation("com.linkedin.dexmaker:dexmaker:2.28.3")
 }

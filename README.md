@@ -17,6 +17,13 @@ https://github.com/mikereidis/headunit
 <img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/f81149b3-a844-4657-87d2-a2867a5eb030" />
 <img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/140bbfdb-5b4f-4d49-a419-85aa91b48371" />
 
+## UI Redesign Status (Calm Glass)
+
+- [x] Phase 0: Foundation & Accessibility
+- [x] Phase 1: Home Dashboard
+- [ ] Phase 2: Settings Overhaul
+- [ ] Phase 3: Projection Chrome
+
 ## How to use
 **Check out the [Wiki](https://github.com/andreknieriem/headunit-revived/wiki) for detailed documentation, setup guides and troubleshooting!**
 
