@@ -239,7 +239,7 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
                 false
             }
         } catch (e: Exception) {
-            AppLog.w("MicRecorder: Source %s threw: %s", sourceNameFor(source), e.message)
+            AppLog.w("MicRecorder: Source %s threw: %s", sourceNameFor(source), e.message ?: "unknown")
             false
         }
     }
