@@ -1,0 +1,66 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flavor: [ github, playstore ]
+        build_type: [ debug, release ]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Decode keystore
+        if: matrix.build_type == 'release' && env.KEYSTORE_BASE64 != ''
+        run: echo "$KEYSTORE_BASE64" | base64 -d > headunit-release-key.jks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Build ${{ matrix.flavor }} ${{ matrix.build_type }}
+        run: ./gradlew assemble${{ matrix.flavor }}${{ matrix.build_type }} --stacktrace
+        env:
+          HEADUNIT_KEYSTORE_PASSWORD: ${{ secrets.HEADUNIT_KEYSTORE_PASSWORD }}
+          HEADUNIT_KEY_PASSWORD: ${{ secrets.HEADUNIT_KEY_PASSWORD }}
+
+      - name: Run tests
+        run: ./gradlew test${{ matrix.flavor }}${{ matrix.build_type }}UnitTest --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.flavor }}-${{ matrix.build_type }}
+          path: app/build/outputs/apk/${{ matrix.flavor }}/${{ matrix.build_type }}/*.apk
+          retention-days: 30
+
+      - name: Upload build reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports-${{ matrix.flavor }}-${{ matrix.build_type }}
+          path: app/build/reports/
+          retention-days: 7
