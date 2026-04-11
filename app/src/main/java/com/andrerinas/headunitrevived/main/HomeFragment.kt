@@ -8,7 +8,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioDeviceCallback
 import androidx.core.content.getSystemService
 import com.andrerinas.headunitrevived.connection.CommManager.ConnectionState
-import com.andrerinas.headunitrevived.ui.GlassView.GlassState
+import com.andrerinas.headunitrevived.view.GlassView.GlassState
 import android.content.Context
 import android.content.Intent
 import android.hardware.usb.UsbManager
