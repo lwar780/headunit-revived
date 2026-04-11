@@ -291,7 +291,7 @@ class HomeFragment : Fragment() {
             is ConnectionState.Connected,
             is ConnectionState.StartingTransport -> GlassState.ACTIVE to getString(R.string.cd_status_connected)
             is ConnectionState.HandshakeComplete,
-            is ConnectionState.TransportStarted -> GlassState.READY to (if (state is ConnectionState.HandshakeComplete) state.deviceName ?: getString(R.string.cd_status_ready) else getString(R.string.cd_status_ready))
+            is ConnectionState.TransportStarted -> GlassState.READY to getString(R.string.cd_status_ready)
             is ConnectionState.Error -> GlassState.ERROR to getString(R.string.cd_status_error, state.message)
         }
 
