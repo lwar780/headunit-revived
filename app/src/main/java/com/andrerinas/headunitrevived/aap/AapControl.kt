@@ -75,9 +75,15 @@ internal class AapControlMedia(
 
         val configResponse = Media.Config.newBuilder().apply {
             status = Media.Config.ConfigStatus.HEADUNIT
-            // Use 30 for maxUnacked on wireless to avoid stalls due to jitter, 16 for USB.
-            maxUnacked = if (aapTransport.isWireless) 30 else 16
-            
+            // Conservative maxUnacked values. v2.1.1 used 1 (video) / 3 (audio).
+            // v2.2.0-beta3 raised to 16/30 which caused stalls on some phones.
+            // Compromise: slightly higher than v2.1.1, lower than beta3.
+            maxUnacked = if (Channel.isAudio(channel)) {
+                if (aapTransport.isWireless) 8 else 4
+            } else {
+                if (aapTransport.isWireless) 4 else 2
+            }
+
             addConfigurationIndices(0)
         }.build()
         AppLog.i("Config response: %s", configResponse)
@@ -293,27 +299,33 @@ internal class AapControlService(
     private fun audioFocusRequest(notification: Control.AudioFocusRequestNotification, channel: Int): Int {
         AppLog.i("Audio Focus Request: ${notification.request}")
 
-        // Always respond with the mapped focus state to AA — never deny.
-        // the phone must always believe the headunit
-        // has audio focus, otherwise it keeps audio output on the phone itself.
+        // Step 1: Request system audio focus FIRST (synchronous, 5-20ms).
+        // This ensures Android's audio routing is configured before the phone
+        // starts streaming. Previously, the protocol response was sent before
+        // this call, creating a race where audio arrived before routing was ready.
+        val systemResult = aapAudio.requestFocusChange(
+            AudioConfigs.stream(channel),
+            notification.request.number,
+            AudioManager.OnAudioFocusChangeListener {
+                AppLog.i("System audio focus changed: $it ${systemFocusName[it]}")
+            }
+        )
+        AppLog.i("System audio focus result: ${if (systemResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) "GRANTED" else "FAILED ($systemResult)"}")
+
+        // Step 2: Send protocol response AFTER system focus is configured.
+        // Always grant to the phone — never deny, or AA keeps audio on phone speaker.
         val mappedState = focusResponse[notification.request]
         if (mappedState != null) {
             val response = Control.AudioFocusNotification.newBuilder()
                 .setFocusState(mappedState)
                 .build()
-            AppLog.i("Sending immediate AudioFocusNotification: $mappedState (always-grant)")
+            AppLog.i("Sending AudioFocusNotification: $mappedState (after system focus)")
             aapTransport.send(AapMessage(channel, Control.ControlMsgType.MESSAGE_AUDIO_FOCUS_NOTIFICATION_VALUE, response))
 
             // Sync MediaSession
             val isGain = mappedState == Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN
             aapTransport.onAudioFocusStateChanged?.invoke(isGain)
         }
-
-        // Best-effort: request system audio focus to duck other apps on the headunit.
-        // The result is intentionally ignored for the protocol response above.
-        aapAudio.requestFocusChange(AudioConfigs.stream(channel), notification.request.number, AudioManager.OnAudioFocusChangeListener {
-            AppLog.i("System audio focus changed: $it ${systemFocusName[it]}")
-        })
 
         return 0
     }

@@ -32,25 +32,26 @@ internal class AapMessageHandlerType(
         val flags = message.flags
 
         // 1. Try processing as Video stream first (ID_VID)
-        // High priority for the smoothest possible display.
+        // Send ACK IMMEDIATELY before processing to keep the stream flowing.
+        // This prevents blocking the phone if the decoder is slow to initialize.
+        // Reverted from post-process ACK which caused "AA is starting" hang.
         if (message.channel == Channel.ID_VID) {
+             if (msgType == 0 || msgType == 1) {
+                 transport.sendMediaAck(message.channel)
+             }
              if (aapVideo.process(message)) {
                  videoPacketCount++
-                 // Send ACK AFTER processing
-                 if (msgType == 0 || msgType == 1) {
-                     transport.sendMediaAck(message.channel)
-                 }
                  return
              }
         }
 
         // 2. Try processing as Audio stream (Speech, System, Media)
+        // Same pattern: ACK before process to avoid stalling the phone.
         if (message.isAudio) {
+            if (msgType == 0 || msgType == 1) {
+                transport.sendMediaAck(message.channel)
+            }
             if (aapAudio.process(message)) {
-                // Send ACK AFTER processing
-                if (msgType == 0 || msgType == 1) {
-                    transport.sendMediaAck(message.channel)
-                }
                 return
             }
         }
