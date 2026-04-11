@@ -82,6 +82,31 @@ fun computeVersionName(major: Int, minor: Int, patch: Int, beta: Int?): String {
     }
 }
 
+// Git-derived build provenance — baked into BuildConfig so you can always
+// tell exactly which commit produced an APK.
+fun gitShortSha(): String = try {
+    Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short=7", "HEAD"))
+        .inputStream.bufferedReader().readText().trim()
+} catch (_: Exception) { "unknown" }
+
+fun gitBranch(): String = try {
+    Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--abbrev-ref", "HEAD"))
+        .inputStream.bufferedReader().readText().trim()
+} catch (_: Exception) { "unknown" }
+
+fun buildTimestamp(): String =
+    java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US)
+        .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+        .format(java.util.Date())
+
+// Feature branches get a distinct versionName suffix so APKs are identifiable:
+// e.g. "2.2.0-beta3+feature.aap-testing.a1b2c3d"
+fun featureVersionName(base: String, branch: String, sha: String): String {
+    if (branch == "main" || branch == "develop" || branch == "HEAD") return base
+    val shortBranch = branch.removePrefix("feature/").take(20)
+    return "$base+$shortBranch.$sha"
+}
+
 android {
     compileSdk = 36
     ndkVersion = "27.0.12077973"
@@ -135,11 +160,21 @@ android {
         applicationId = "com.andrerinas.headunitrevived"
         minSdk = 16
         targetSdk = 36
+
+        val baseVersionName = computeVersionName(versionMajor, versionMinor, versionPatch, versionBeta)
+        val sha = gitShortSha()
+        val branch = gitBranch()
+
         versionCode = computeVersionCode(versionMajor, versionMinor, versionPatch, versionBeta)
-        versionName = computeVersionName(versionMajor, versionMinor, versionPatch, versionBeta)
-        setProperty("archivesBaseName", "${applicationId}_${versionName}")
+        versionName = featureVersionName(baseVersionName, branch, sha)
+        setProperty("archivesBaseName", "${applicationId}_${baseVersionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
+
+        // Build provenance — visible in Settings > About and in bug reports
+        buildConfigField("String", "GIT_SHA", "\"$sha\"")
+        buildConfigField("String", "GIT_BRANCH", "\"$branch\"")
+        buildConfigField("String", "BUILD_TIMESTAMP", "\"${buildTimestamp()}\"")
 
         // Store available locales in BuildConfig for runtime access
         // This is scanned at build time from values-XX directories
