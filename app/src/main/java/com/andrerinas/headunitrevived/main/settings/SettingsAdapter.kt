@@ -179,7 +179,6 @@ class SettingsAdapter : ListAdapter<SettingItem, RecyclerView.ViewHolder>(Settin
             
             // Accessibility
             val status = if (setting.isChecked) itemView.context.getString(R.string.enabled) else itemView.context.getString(R.string.disabled)
-            val cd = itemView.context.getString(R.string.cd_toggle_on, name) // Simplified, assuming user knows double tap to toggle
             settingSwitch.contentDescription = "$name. $status"
             itemView.contentDescription = "$name. $status. ${itemView.context.getString(setting.descriptionResId)}"
 
