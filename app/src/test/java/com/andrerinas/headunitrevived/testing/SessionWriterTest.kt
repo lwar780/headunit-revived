@@ -103,7 +103,7 @@ class SessionWriterTest {
         val frames = listOf(SessionFrame(0L, SessionFrame.Direction.FROM_CAR, 0, 1, ByteArray(100)))
         SessionWriter.writeSession(context, UUID.randomUUID(), frames, testMetadata())
 
-        assertThat(SessionWriter.totalStorageBytes(context)).isGreaterThan(0)
+        assertThat(SessionWriter.totalStorageBytes(context)).isGreaterThan(0L)
     }
 
     @Test

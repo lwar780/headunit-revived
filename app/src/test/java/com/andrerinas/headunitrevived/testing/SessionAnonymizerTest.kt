@@ -125,7 +125,7 @@ class SessionAnonymizerTest {
     fun `sanitize navigation redacts road name`() {
         val turnDetail = NavigationStatus.NextTurnDetail.newBuilder()
             .setRoad("Main Street")
-            .setNextturn(NavigationStatus.TurnDirection.LEFT)
+            .setNextturn(NavigationStatus.NextTurnDetail.NextEvent.TURN)
             .build()
 
         val message = AapMessage(Channel.ID_NAV, 0x4444, turnDetail)
@@ -134,7 +134,7 @@ class SessionAnonymizerTest {
         val sanitizedDetail = sanitized.parse(NavigationStatus.NextTurnDetail.newBuilder()).build()
 
         assertThat(sanitizedDetail.road).isEqualTo("[REDACTED]")
-        assertThat(sanitizedDetail.nextturn).isEqualTo(NavigationStatus.TurnDirection.LEFT)
+        assertThat(sanitizedDetail.nextturn).isEqualTo(NavigationStatus.NextTurnDetail.NextEvent.TURN)
     }
 
     @Test

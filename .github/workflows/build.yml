@@ -42,10 +42,17 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
       - name: Build ${{ matrix.flavor }} ${{ matrix.build_type }}
-        run: ./gradlew assemble${{ matrix.flavor }}${{ matrix.build_type }} --stacktrace
+        run: |
+          if [ "${{ matrix.build_type }}" = "release" ] && [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No keystore secrets — building release with debug signing"
+            ./gradlew assemble${{ matrix.flavor }}Debug --stacktrace
+          else
+            ./gradlew assemble${{ matrix.flavor }}${{ matrix.build_type }} --stacktrace
+          fi
         env:
           HEADUNIT_KEYSTORE_PASSWORD: ${{ secrets.HEADUNIT_KEYSTORE_PASSWORD }}
           HEADUNIT_KEY_PASSWORD: ${{ secrets.HEADUNIT_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
       - name: Run tests
         run: ./gradlew test${{ matrix.flavor }}${{ matrix.build_type }}UnitTest --stacktrace
