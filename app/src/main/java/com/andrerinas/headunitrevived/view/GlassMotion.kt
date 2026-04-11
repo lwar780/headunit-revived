@@ -1,4 +1,4 @@
-package com.andrerinas.headunitrevived.ui
+package com.andrerinas.headunitrevived.view
 
 import android.annotation.SuppressLint
 import android.util.TypedValue

@@ -18,6 +18,7 @@
         android:padding="12dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_settings_white"
+        android:accessibilityTraversalAfter="@+id/status_bar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -34,7 +35,7 @@
         app:layout_constraintWidth_max="1200dp">
 
         <!-- Self Mode Panel -->
-        <com.andrerinas.headunitrevived.ui.GlassView
+        <com.andrerinas.headunitrevived.view.GlassView
             android:id="@+id/self_mode_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -78,10 +79,10 @@
                     android:accessibilityLiveRegion="polite"
                     android:text="@string/cd_status_not_connected" />
             </LinearLayout>
-        </com.andrerinas.headunitrevived.ui.GlassView>
+        </com.andrerinas.headunitrevived.view.GlassView>
 
         <!-- USB Panel -->
-        <com.andrerinas.headunitrevived.ui.GlassView
+        <com.andrerinas.headunitrevived.view.GlassView
             android:id="@+id/usb_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -124,10 +125,10 @@
                     android:accessibilityLiveRegion="polite"
                     android:text="@string/cd_status_not_connected" />
             </LinearLayout>
-        </com.andrerinas.headunitrevived.ui.GlassView>
+        </com.andrerinas.headunitrevived.view.GlassView>
 
         <!-- WiFi Panel -->
-        <com.andrerinas.headunitrevived.ui.GlassView
+        <com.andrerinas.headunitrevived.view.GlassView
             android:id="@+id/wifi_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -170,10 +171,10 @@
                     android:accessibilityLiveRegion="polite"
                     android:text="@string/cd_status_not_connected" />
             </LinearLayout>
-        </com.andrerinas.headunitrevived.ui.GlassView>
+        </com.andrerinas.headunitrevived.view.GlassView>
 
         <!-- Settings Panel (First-run only) -->
-        <com.andrerinas.headunitrevived.ui.GlassView
+        <com.andrerinas.headunitrevived.view.GlassView
             android:id="@+id/settings_panel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -218,18 +219,20 @@
                     android:text="Configure App"
                     android:textColor="#B3FFFFFF" />
             </LinearLayout>
-        </com.andrerinas.headunitrevived.ui.GlassView>
+        </com.andrerinas.headunitrevived.view.GlassView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Audio/Mic Status Bar (Bottom) -->
-    <com.andrerinas.headunitrevived.ui.GlassView
+    <com.andrerinas.headunitrevived.view.GlassView
         android:id="@+id/status_bar"
         android:layout_width="0dp"
         android:layout_height="@dimen/glass_status_bar_height"
         android:layout_margin="@dimen/glass_spacing_md"
         android:clickable="true"
         android:focusable="true"
+        android:accessibilityTraversalAfter="@+id/panels_container"
+        android:accessibilityTraversalBefore="@+id/settings_gear"
         app:glassCornerRadius="@dimen/glass_radius_pill"
         app:layout_constraintBottom_toTopOf="@+id/exit_button"
         app:layout_constraintEnd_toEndOf="parent"
@@ -287,7 +290,7 @@
                 android:maxLines="1"
                 tools:text="Mic: Built-in" />
         </LinearLayout>
-    </com.andrerinas.headunitrevived.ui.GlassView>
+    </com.andrerinas.headunitrevived.view.GlassView>
 
     <!-- Exit Button -->
     <com.google.android.material.button.MaterialButton

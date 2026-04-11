@@ -1,8 +1,8 @@
 package com.andrerinas.headunitrevived.main
 
-import com.andrerinas.headunitrevived.ui.GlassView
-import com.andrerinas.headunitrevived.ui.GlassMotion.applySpringPress
-import com.andrerinas.headunitrevived.ui.GlassMotion.springFadeIn
+import com.andrerinas.headunitrevived.view.GlassView
+import com.andrerinas.headunitrevived.view.GlassMotion.applySpringPress
+import com.andrerinas.headunitrevived.view.GlassMotion.springFadeIn
 import android.media.AudioManager
 import android.media.AudioDeviceInfo
 import android.media.AudioDeviceCallback
@@ -79,6 +79,17 @@ class HomeFragment : Fragment() {
 
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
+
+    private fun retryConnection() {
+        val appSettings = App.provide(requireContext()).settings
+        val lastType = appSettings.lastConnectionType
+        if (lastType.isEmpty()) {
+            Toast.makeText(requireContext(), "No previous connection to retry", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AppLog.i("HomeFragment: Retrying last connection ($lastType)")
+        attemptAutoConnect()
+    }
 
     private fun updateWifiButtonFeedback(scanning: Boolean) {
         if (scanning) {
@@ -333,7 +344,9 @@ class HomeFragment : Fragment() {
         }
 
         selfModePanel.setOnClickListener {
-            if (commManager.isConnected) {
+            if (commManager.connectionState.value is ConnectionState.Error) {
+                retryConnection()
+            } else if (commManager.isConnected) {
                 val aapIntent = Intent(requireContext(), AapProjectionActivity::class.java)
                 aapIntent.putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
                 startActivity(aapIntent)
@@ -343,9 +356,13 @@ class HomeFragment : Fragment() {
         }
 
         usbPanel.setOnClickListener {
-            val controller = findNavController()
-            if (controller.currentDestination?.id == R.id.homeFragment) {
-                controller.navigate(R.id.action_homeFragment_to_usbListFragment)
+            if (commManager.connectionState.value is ConnectionState.Error) {
+                retryConnection()
+            } else {
+                val controller = findNavController()
+                if (controller.currentDestination?.id == R.id.homeFragment) {
+                    controller.navigate(R.id.action_homeFragment_to_usbListFragment)
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-package com.andrerinas.headunitrevived.ui
+package com.andrerinas.headunitrevived.view
 
 import android.animation.ValueAnimator
 import android.content.Context
