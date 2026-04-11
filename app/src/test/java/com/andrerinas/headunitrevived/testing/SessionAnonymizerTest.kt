@@ -18,6 +18,7 @@ class SessionAnonymizerTest {
     fun `sanitize sensor message zeroes GPS coordinates`() {
         // Build a sensor message with GPS data
         val location = Sensors.SensorBatch.LocationData.newBuilder()
+            .setTimestamp(1000L)
             .setLatitude(324567890)
             .setLongitude(345678901)
             .setAccuracy(100)
@@ -125,6 +126,7 @@ class SessionAnonymizerTest {
     fun `sanitize navigation redacts road name`() {
         val turnDetail = NavigationStatus.NextTurnDetail.newBuilder()
             .setRoad("Main Street")
+            .setSide(NavigationStatus.NextTurnDetail.Side.LEFT)
             .setNextturn(NavigationStatus.NextTurnDetail.NextEvent.TURN)
             .build()
 
@@ -156,8 +158,10 @@ class SessionAnonymizerTest {
     @Test
     fun `sanitize is idempotent`() {
         val location = Sensors.SensorBatch.LocationData.newBuilder()
+            .setTimestamp(1000L)
             .setLatitude(324567890)
             .setLongitude(345678901)
+            .setAccuracy(50)
             .build()
         val sensorBatch = Sensors.SensorBatch.newBuilder()
             .addLocationData(location)

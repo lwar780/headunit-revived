@@ -13,7 +13,7 @@ import java.io.DataInputStream
 import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [28], application = android.app.Application::class)
 class SessionWriterTest {
 
     private lateinit var context: Context
