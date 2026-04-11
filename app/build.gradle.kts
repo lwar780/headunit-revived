@@ -31,6 +31,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("com.google.truth:truth:1.1.5")
+    testImplementation("io.kotest:kotest-property:5.8.0")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
     implementation(project(":contract"))
@@ -44,6 +48,37 @@ dependencies {
 
     // DexMaker for runtime subclassing (Hotspot Fix)
     implementation("com.linkedin.dexmaker:dexmaker:2.28.3")
+}
+
+// Version scheme: MAJOR * 100000 + MINOR * 10000 + PATCH * 100 + BETA_OFFSET
+// - Stable releases: BETA_OFFSET = 99 (always highest within same M.m.p)
+// - Beta N releases: BETA_OFFSET = N (1-98)
+// Examples:
+//   2.2.0-beta3 = 220003
+//   2.2.0 stable = 220099
+//   2.2.1-beta1 = 220101
+//   2.2.1 stable = 220199
+//   2.3.0-beta1 = 230001
+//   3.0.0 stable = 300099
+//
+// MIGRATION NOTE: Users on versionCode 58 cannot upgrade in-place to 220003.
+// This is a one-time breaking change requiring uninstall/reinstall.
+val versionMajor = 2
+val versionMinor = 2
+val versionPatch = 0
+val versionBeta: Int? = 3  // null for stable, 1-98 for beta N
+
+fun computeVersionCode(major: Int, minor: Int, patch: Int, beta: Int?): Int {
+    val betaOffset = beta ?: 99
+    return major * 100000 + minor * 10000 + patch * 100 + betaOffset
+}
+
+fun computeVersionName(major: Int, minor: Int, patch: Int, beta: Int?): String {
+    return if (beta != null) {
+        "$major.$minor.$patch-beta$beta"
+    } else {
+        "$major.$minor.$patch"
+    }
 }
 
 android {
@@ -99,8 +134,8 @@ android {
         applicationId = "com.andrerinas.headunitrevived"
         minSdk = 16
         targetSdk = 36
-        versionCode = 58
-        versionName = "2.2.0-beta3"
+        versionCode = computeVersionCode(versionMajor, versionMinor, versionPatch, versionBeta)
+        versionName = computeVersionName(versionMajor, versionMinor, versionPatch, versionBeta)
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
