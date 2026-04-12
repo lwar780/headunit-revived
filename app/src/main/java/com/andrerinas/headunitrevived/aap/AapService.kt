@@ -600,7 +600,13 @@ class AapService : Service(), UsbReceiver.Listener {
         else requestUsbPermission(device)
     }
 
-    private suspend fun connectUsbWithRetry(device: UsbDevice) { val settings = App.provide(this).settings; serviceScope.launch { commManager.connect(device) } }
+    private suspend fun connectUsbWithRetry(device: UsbDevice) {
+        val settings = App.provide(this).settings
+        commManager.connect(device)
+        if (commManager.isConnected) {
+            settings.saveLastConnection(Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat(device).uniqueName)
+        }
+    }
     
     private fun startDiscovery(oneShot: Boolean = false) {
         if (networkDiscovery == null) {

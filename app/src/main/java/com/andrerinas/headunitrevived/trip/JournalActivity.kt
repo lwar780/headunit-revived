@@ -7,7 +7,7 @@ import androidx.car.app.Screen
 import androidx.car.app.CarContext
 import androidx.car.app.model.*
 import androidx.car.app.validation.HostValidator
-import androidx.car.app.CarAppActivity
+import androidx.activity.ComponentActivity
 import com.andrerinas.headunitrevived.R
 import java.text.SimpleDateFormat
 import java.util.*
@@ -15,7 +15,7 @@ import java.util.*
 /**
  * Activity for the phone-side launcher.
  */
-class JournalActivity : CarAppActivity()
+class JournalActivity : ComponentActivity()
 
 /**
  * Android Auto entry point for the Trip Journal.
