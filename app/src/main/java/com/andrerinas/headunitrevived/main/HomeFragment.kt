@@ -66,6 +66,7 @@ class HomeFragment : Fragment() {
     private lateinit var selfModePanel: GlassView
     private lateinit var usbPanel: GlassView
     private lateinit var wifiPanel: GlassView
+    private lateinit var audioTestPanel: GlassView
     private lateinit var settingsPanel: GlassView
     private lateinit var settingsGear: View
     private lateinit var statusBar: GlassView
@@ -76,6 +77,7 @@ class HomeFragment : Fragment() {
     private lateinit var selfModeStatus: TextView
     private lateinit var usbStatus: TextView
     private lateinit var wifiStatus: TextView
+    private lateinit var audioTestStatus: TextView
 
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
@@ -122,6 +124,7 @@ class HomeFragment : Fragment() {
         selfModePanel = view.findViewById(R.id.self_mode_panel)
         usbPanel = view.findViewById(R.id.usb_panel)
         wifiPanel = view.findViewById(R.id.wifi_panel)
+        audioTestPanel = view.findViewById(R.id.audio_test_panel)
         settingsPanel = view.findViewById(R.id.settings_panel)
         settingsGear = view.findViewById(R.id.settings_gear)
         statusBar = view.findViewById(R.id.status_bar)
@@ -132,6 +135,7 @@ class HomeFragment : Fragment() {
         selfModeStatus = view.findViewById(R.id.self_mode_status)
         usbStatus = view.findViewById(R.id.usb_status)
         wifiStatus = view.findViewById(R.id.wifi_status)
+        audioTestStatus = view.findViewById(R.id.audio_test_status)
 
         setupListeners()
         
@@ -164,10 +168,10 @@ class HomeFragment : Fragment() {
         }
 
         // Apply motion
-        listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel, statusBar).forEach { it.applySpringPress() }
+        listOf(selfModePanel, usbPanel, wifiPanel, audioTestPanel, settingsPanel, statusBar).forEach { it.applySpringPress() }
         
         // Staggered entry
-        val panels = listOf(selfModePanel, usbPanel, wifiPanel, settingsPanel)
+        val panels = listOf(selfModePanel, usbPanel, wifiPanel, audioTestPanel, settingsPanel)
         panels.filter { it.visibility != View.GONE }.forEachIndexed { index, panel ->
             panel.springFadeIn(index * 60L)
         }
@@ -354,6 +358,11 @@ class HomeFragment : Fragment() {
             } else {
                 startSelfMode()
             }
+        }
+
+        audioTestPanel.setOnClickListener {
+            App.provide(requireContext()).soundUX.play(SoundEvent.CLICK)
+            findNavController().navigate(R.id.action_homeFragment_to_audioTestFragment)
         }
 
         usbPanel.setOnClickListener {

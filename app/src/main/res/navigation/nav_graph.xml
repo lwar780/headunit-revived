@@ -22,7 +22,19 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_homeFragment_to_audioTestFragment"
+            app:destination="@id/audioTestFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
+
+    <fragment
+        android:id="@+id/audioTestFragment"
+        android:name="com.andrerinas.headunitrevived.main.AudioTestFragment"
+        android:label="@string/audio_test" />
 
     <fragment
         android:id="@+id/settingsFragment"

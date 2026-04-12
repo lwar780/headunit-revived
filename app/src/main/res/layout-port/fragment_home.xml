@@ -167,6 +167,51 @@
             </LinearLayout>
         </com.andrerinas.headunitrevived.view.GlassView>
 
+        <!-- Audio Test Panel -->
+        <com.andrerinas.headunitrevived.view.GlassView
+            android:id="@+id/audio_test_panel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/glass_spacing_md"
+            android:clickable="true"
+            android:focusable="true"
+            app:glassCornerRadius="@dimen/glass_radius_panel"
+            app:glassState="idle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/wifi_panel"
+            app:layout_constraintTop_toBottomOf="@+id/usb_panel">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/glass_spacing_lg">
+
+                <!-- TODO: Replace with ic_mic when available -->
+                <ImageView
+                    android:layout_width="@dimen/glass_panel_icon_size"
+                    android:layout_height="@dimen/glass_panel_icon_size"
+                    android:src="@drawable/ic_refresh_white"
+                    app:tint="@android:color/white" />
+
+                <TextView
+                    style="@style/TextAppearance.Glass.BodyLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_sm"
+                    android:text="@string/audio_test" />
+
+                <TextView
+                    android:id="@+id/audio_test_status"
+                    style="@style/TextAppearance.Glass.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/glass_spacing_xs"
+                    android:text="@string/audio_test_tap" />
+            </LinearLayout>
+        </com.andrerinas.headunitrevived.view.GlassView>
+
         <!-- Settings Panel -->
         <com.andrerinas.headunitrevived.view.GlassView
             android:id="@+id/settings_panel"
@@ -180,8 +225,9 @@
             app:glassState="idle"
             app:glassTint="@color/brand_teal"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/wifi_panel"
-            app:layout_constraintTop_toBottomOf="@+id/usb_panel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/audio_test_panel"
+            app:layout_constraintWidth_percent="0.6"
             tools:visibility="visible">
 
             <LinearLayout
