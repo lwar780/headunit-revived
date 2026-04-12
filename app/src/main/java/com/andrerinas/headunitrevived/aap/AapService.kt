@@ -608,9 +608,7 @@ class AapService : Service(), UsbReceiver.Listener {
                 override fun onServiceFound(ip: String, port: Int, socket: Socket?) {
                     serviceScope.launch { commManager.connect(socket ?: return@launch) }
                 }
-                override fun onScanFinished() {
-                    // Handle scan finish
-                }
+                override fun onScanFinished() {}
             })
         }
         networkDiscovery?.startScan()
