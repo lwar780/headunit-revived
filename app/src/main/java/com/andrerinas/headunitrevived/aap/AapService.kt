@@ -224,11 +224,12 @@ class AapService : Service(), UsbReceiver.Listener {
         super.onCreate()
         AppLog.i("AapService creating...")
 
+        val notification = createNotification()
         if (PlatformGuard.hasServiceTypes) {
-            startForeground(1, createNotification(),
+            startForeground(1, notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
-            startForeground(1, createNotification())
+            startForeground(1, notification)
         }
         
         setupCarMode()
@@ -240,11 +241,11 @@ class AapService : Service(), UsbReceiver.Listener {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             val permIntent = Intent(this, MainActivity::class.java).apply { action = "REQUEST_MIC_PERMISSION"; flags = Intent.FLAG_ACTIVITY_NEW_TASK }
             val permPendingIntent = PendingIntent.getActivity(this, 0, permIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-            val notification = NotificationCompat.Builder(this, "service_channel")
+            val micNotification = NotificationCompat.Builder(this, "service_channel")
                 .setContentTitle("Microphone Permission Needed").setContentText("Voice commands require microphone access")
                 .setSmallIcon(R.drawable.ic_network_wifi_white).setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(permPendingIntent).setAutoCancel(true).build()
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(9001, notification)
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(9001, micNotification)
         }
 
         if (mediaSession == null) setupMediaSession()
@@ -530,8 +531,9 @@ class AapService : Service(), UsbReceiver.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP_SERVICE) { isDestroying = true; if (commManager.isConnected) commManager.disconnect(); stopForeground(true); stopSelf(); return START_NOT_STICKY }
         mediaSession?.let { MediaButtonReceiver.handleIntent(it, intent) }
-        if (PlatformGuard.hasServiceTypes) startForeground(1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        else startForeground(1, createNotification())
+        val notification = createNotification()
+        if (PlatformGuard.hasServiceTypes) startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        else startForeground(1, notification)
         if (intent?.getBooleanExtra(BootCompleteReceiver.EXTRA_BOOT_START, false) == true || intent?.action == ACTION_CHECK_USB) acquireBootWakeLock()
         if (intent?.getBooleanExtra(BootCompleteReceiver.EXTRA_BOOT_START, false) == true) { lastWakeHandledTimestamp = SystemClock.elapsedRealtime(); launchMainActivityOnBoot() }
         when (intent?.action) {
@@ -611,7 +613,7 @@ class AapService : Service(), UsbReceiver.Listener {
                 }
             })
         }
-        if (oneShot) (networkDiscovery as NetworkDiscovery).startScan() else (networkDiscovery as NetworkDiscovery).startScan()
+        if (oneShot) networkDiscovery?.startScan() else networkDiscovery?.startScan()
     }
     
     private fun startWirelessServer() { 
