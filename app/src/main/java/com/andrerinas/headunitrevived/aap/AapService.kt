@@ -19,11 +19,13 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.PowerManager
-import android.widget.Toast
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
@@ -1932,6 +1934,33 @@ class AapService : Service(), UsbReceiver.Listener {
                             } else {
                                 AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
                                 commManager.connect(clientSocket)
+
+                                // Audio Loopback Check
+                                val clientIp = clientSocket.inetAddress.hostAddress
+                                if (clientIp == "127.0.0.1") {
+                                    Handler(Looper.getMainLooper()).post {
+                                        Toast.makeText(this@AapService, "Audio feedback? Disable 'Wireless Audio Passthrough' in Settings -> Audio", Toast.LENGTH_LONG).show()
+                                    }
+                                } else {
+                                    try {
+                                        val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+                                        var matched = false
+                                        while (interfaces.hasMoreElements() && !matched) {
+                                            val iface = interfaces.nextElement()
+                                            val addresses = iface.inetAddresses
+                                            while (addresses.hasMoreElements()) {
+                                                val addr = addresses.nextElement()
+                                                if (addr is java.net.Inet4Address && addr.hostAddress == clientIp) {
+                                                    matched = true
+                                                    Handler(Looper.getMainLooper()).post {
+                                                        Toast.makeText(this@AapService, "Audio feedback? Disable 'Wireless Audio Passthrough' in Settings -> Audio", Toast.LENGTH_LONG).show()
+                                                    }
+                                                    break
+                                                }
+                                            }
+                                        }
+                                    } catch (e: Exception) {}
+                                }
                             }
                         }
                     }

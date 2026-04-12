@@ -230,6 +230,8 @@
     <string name="category_audio">Audio</string>
     <string name="enable_audio_sink">Audio Sink</string>
     <string name="enable_audio_sink_description">If disabled, the headunit will not receive audio. Sound will play from the phone.</string>
+    <string name="force_wireless_audio">Wireless Audio Passthrough</string>
+    <string name="force_wireless_audio_description">Play all Android Auto audio on this device instead of the phone. Turn off if you hear audio from both devices at once.</string>
     <string name="use_aac_audio">Use AAC Audio</string>
     <string name="use_aac_audio_description">Use AAC codec for audio to save bandwidth (Experimental).</string>
     <string name="audio_volume_offset">Audio Volume Offset</string>
