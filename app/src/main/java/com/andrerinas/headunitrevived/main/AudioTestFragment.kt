@@ -47,7 +47,9 @@ class AudioTestFragment : Fragment() {
     private var isRecording = false
     private var isPlaying = false
     
-    private val sampleRate = 16000
+    private val sampleRate: Int
+        get() = App.provide(requireContext()).settings.micSampleRate
+
     private val channelIn = AudioFormat.CHANNEL_IN_MONO
     private val channelOut = AudioFormat.CHANNEL_OUT_MONO
     private val encoding = AudioFormat.ENCODING_PCM_16BIT
@@ -251,7 +253,7 @@ class AudioTestFragment : Fragment() {
                             withContext(Dispatchers.Main) {
                                 updateRmsMeter(clampedDb)
                                 if (silentTimeMs >= 2000) {
-                                    updateMicStatus(getString(R.string.audio_test_mic_silent), false)
+                                    updateMicStatus(getString(R.string.audio_test_mic_silent), true)
                                 } else {
                                     updateMicStatus(getString(R.string.audio_test_recording), false)
                                 }

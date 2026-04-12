@@ -192,7 +192,7 @@
                 <ImageView
                     android:layout_width="@dimen/glass_panel_icon_size"
                     android:layout_height="@dimen/glass_panel_icon_size"
-                    android:src="@drawable/ic_refresh_white"
+                    android:src="@drawable/ic_settings_white"
                     app:tint="@android:color/white" />
 
                 <TextView
