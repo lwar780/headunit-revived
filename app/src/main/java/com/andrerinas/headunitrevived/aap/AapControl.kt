@@ -203,17 +203,17 @@ internal class AapControlService(
     private fun audioFocusRequest(notification: Control.AudioFocusRequestNotification, channel: Int): Int {
         AppLog.i("Audio Focus Request: ${notification.request}")
 
-        val focusResponse = mapOf<Control.AudioFocusRequestNotification.AudioFocusRequestType, Control.AudioFocusNotification.AudioFocusStateType>(
-                Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN to Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN,
-                Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN_TRANSIENT to Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN_TRANSIENT,
-                Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN_TRANSIENT_MAY_DUCK to Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN_TRANSIENT_GUIDANCE_ONLY,
-                Control.AudioFocusRequestNotification.AudioFocusRequestType.RELEASE to Control.AudioFocusNotification.AudioFocusStateType.STATE_LOSS
-        )
+        val focusResponse = when(notification.request) {
+            Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN -> Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN
+            Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN_TRANSIENT -> Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN_TRANSIENT
+            Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN_TRANSIENT_MAY_DUCK -> Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN_TRANSIENT_GUIDANCE_ONLY
+            Control.AudioFocusRequestNotification.AudioFocusRequestType.RELEASE -> Control.AudioFocusNotification.AudioFocusStateType.STATE_LOSS
+            else -> null
+        }
 
-        val mappedState = focusResponse[notification.request]
-        if (mappedState != null) {
+        if (focusResponse != null) {
             val response = Control.AudioFocusNotification.newBuilder()
-                .setFocusState(mappedState)
+                .setFocusState(focusResponse)
                 .build()
             val msg = AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_AUDIO_FOCUS_NOTIFICATION_VALUE, response)
             aapTransport.send(msg)
@@ -225,28 +225,24 @@ internal class AapControlService(
 internal class AapControlMedia(private val aapTransport: AapTransport, private val micRecorder: MicRecorder, private val aapAudio: AapAudio) : AapControl {
     override fun execute(message: AapMessage): Int {
         when (message.type) {
-            Media.MsgType.MEDIA_MESSAGE_DATA_VALUE -> {
-                // Handled in audio/video decoders
-            }
-            Media.MsgType.MEDIA_MESSAGE_CODEC_CONFIG_VALUE -> {
-                // Handled in audio/video decoders
-            }
             Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE -> {
-                val response = Media.MediaSetupResponse.newBuilder()
-                        .setStatus(Common.MessageStatus.STATUS_SUCCESS)
+                val response = Media.Config.newBuilder()
+                        .setStatus(Media.Config.ConfigStatus.HEADUNIT)
+                        .setMaxUnacked(1)
                         .build()
-                val msg = AapMessage(message.channel, Media.MsgType.MEDIA_MESSAGE_SETUP_RESPONSE_VALUE, response)
+                val msg = AapMessage(message.channel, Media.MsgType.MEDIA_MESSAGE_CONFIG_VALUE, response)
                 aapTransport.send(msg)
             }
             Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_REQUEST_VALUE -> {
-                val focusRequest = message.parse(Media.VideoFocusRequest.newBuilder()).build()
+                val focusRequest = message.parse(Media.VideoFocusRequestNotification.newBuilder()).build()
                 if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_NATIVE) {
                     AppLog.i("Video Focus NATIVE received. User likely clicked Exit. Stopping transport.")
                     aapTransport.wasUserExit = true
                     aapTransport.quit(clean = true)
                 } else {
-                    val response = Media.VideoFocusResponse.newBuilder()
-                            .setFocusStatus(Media.VideoFocusStatus.VIDEO_FOCUS_PROJECTED)
+                    val response = Media.VideoFocusNotification.newBuilder()
+                            .setMode(Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED)
+                            .setUnsolicited(false)
                             .build()
                     val msg = AapMessage(message.channel, Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_NOTIFICATION_VALUE, response)
                     aapTransport.send(msg)
