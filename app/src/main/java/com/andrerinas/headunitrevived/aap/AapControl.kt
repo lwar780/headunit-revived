@@ -203,11 +203,11 @@ internal class AapControlService(
     private fun audioFocusRequest(notification: Control.AudioFocusRequestNotification, channel: Int): Int {
         AppLog.i("Audio Focus Request: ${notification.request}")
 
-        val focusResponse = mapOf(
-                Control.AudioFocusRequest.AUDIO_FOCUS_GAIN to Control.AudioFocusState.AUDIO_FOCUS_STATE_GAIN,
-                Control.AudioFocusRequest.AUDIO_FOCUS_GAIN_TRANSIENT to Control.AudioFocusState.AUDIO_FOCUS_STATE_GAIN_TRANSIENT,
-                Control.AudioFocusRequest.AUDIO_FOCUS_GAIN_TRANSIENT_MAY_DUCK to Control.AudioFocusState.AUDIO_FOCUS_STATE_GAIN_TRANSIENT_MAY_DUCK,
-                Control.AudioFocusRequest.AUDIO_FOCUS_RELEASE to Control.AudioFocusState.AUDIO_FOCUS_STATE_LOSS
+        val focusResponse = mapOf<Control.AudioFocusRequestNotification.AudioFocusRequestType, Control.AudioFocusNotification.AudioFocusStateType>(
+                Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN to Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN,
+                Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN_TRANSIENT to Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN_TRANSIENT,
+                Control.AudioFocusRequestNotification.AudioFocusRequestType.GAIN_TRANSIENT_MAY_DUCK to Control.AudioFocusNotification.AudioFocusStateType.STATE_GAIN_TRANSIENT_MAY_DUCK,
+                Control.AudioFocusRequestNotification.AudioFocusRequestType.RELEASE to Control.AudioFocusNotification.AudioFocusStateType.STATE_LOSS
         )
 
         val mappedState = focusResponse[notification.request]
