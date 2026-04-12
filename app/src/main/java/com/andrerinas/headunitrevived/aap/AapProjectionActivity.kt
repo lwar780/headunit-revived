@@ -373,19 +373,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         overlayView.isFocusableInTouchMode = true
 
         overlayView.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    overlayView.requestFocus()
-                }
-                sendTouchEvent(event)
-                true
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                overlayView.requestFocus()
             }
+            sendTouchEvent(event)
+            true
+        }
 
         container.addView(overlayView)
         overlayView.requestFocus()
-        setFullscreen() // Call setFullscreen here as well
+        setFullscreen()
 
         val loadingOverlay = findViewById<View>(R.id.loading_overlay)
-        // Ensure loading overlay is on top of everything
         loadingOverlay?.bringToFront()
 
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
@@ -396,12 +395,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             runOnUiThread {
                 loadingOverlay?.visibility = View.GONE
                 overlayState = OverlayState.HIDDEN
-
-                // Show one-time gesture hint
-                if (!settings.gestureHintShown) {
-                    Toast.makeText(this@AapProjectionActivity, R.string.gesture_hint, Toast.LENGTH_LONG).show()
-                    settings.gestureHintShown = true
-                }
             }
         }
     }
