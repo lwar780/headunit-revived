@@ -125,7 +125,7 @@ class AudioTestFragment : Fragment() {
         val index = sourceValues.indexOf(currentSource).coerceAtLeast(0)
         micSourceSpinner.setSelection(index)
 
-        view.findViewById<Button>(R.id.save_source_button).setOnClickListener {
+        view?.findViewById<Button>(R.id.save_source_button)?.setOnClickListener {
             val selectedSource = sourceValues[micSourceSpinner.selectedItemPosition]
             App.provide(requireContext()).settings.micInputSource = selectedSource
             Toast.makeText(requireContext(), "Saved as default mic source", Toast.LENGTH_SHORT).show()
