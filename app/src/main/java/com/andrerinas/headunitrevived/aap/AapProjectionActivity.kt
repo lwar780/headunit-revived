@@ -85,6 +85,12 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         }
     }
 
+    private val toggleHudReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            // Implementation if needed
+        }
+    }
+
     private val videoWatchdogRunnable = object : Runnable {
         override fun run() {
             val loadingOverlay = findViewById<View>(R.id.loading_overlay)
@@ -168,7 +174,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     translationZ = 100f
                 }
             }
-            val params = FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+            val params = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.TOP or Gravity.START
                 setMargins(20, 20, 0, 0)
             }
@@ -193,7 +199,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                     translationZ = 100f
                 }
             }
-            container.addView(micIndicator, FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+            container.addView(micIndicator, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.TOP or Gravity.END
                 setMargins(0, 20, 20, 0)
             })
@@ -202,7 +208,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         // DEBUG Mic Status Overlay
         if (BuildConfig.DEBUG) {
             val micDebugOverlay = TextView(this).apply {
-                layoutParams = FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START).apply {
+                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START).apply {
                     setMargins(16, 100, 0, 0)
                 }
                 setTextColor(Color.YELLOW)
@@ -255,7 +261,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         } else {
             projectionView = ProjectionView(this)
         }
-        (projectionView as View).layoutParams = FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        (projectionView as View).layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         container.addView(projectionView as View)
         projectionView.addCallback(this)
 
@@ -268,7 +274,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 true
             }
         }
-        container.addView(overlayView, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        container.addView(overlayView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
 
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(container) { _, insets ->
             val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
@@ -294,7 +300,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         micFailOverlay?.let { container.removeView(it) }
 
         val overlay = FrameLayout(this).apply {
-            layoutParams = FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
             setBackgroundColor(Color.argb(220, 0, 0, 0))
             isClickable = true
             isFocusable = true
@@ -339,11 +345,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                             })
                         }
                     }.apply {
-                        layoutParams = LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { topMargin = 16 }
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = 16 }
                     })
                 }
             }
-            addView(content, FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+            addView(content, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
         }
         container.addView(overlay)
         micFailOverlay = overlay
