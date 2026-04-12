@@ -377,6 +377,31 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         setFullscreen()
     }
 
+    private fun showReconnectingOverlay() {
+        AppLog.i("Showing reconnecting overlay")
+        overlayState = OverlayState.RECONNECTING
+        val overlay = findViewById<View>(R.id.loading_overlay) ?: return
+        val title = findViewById<TextView>(R.id.overlay_text)
+        val detail = findViewById<TextView>(R.id.overlay_detail)
+        val button = findViewById<Button>(R.id.disconnect_button)
+        overlay.visibility = View.VISIBLE
+        title?.text = getString(R.string.connection_interrupted)
+        detail?.text = getString(R.string.connection_interrupted_detail)
+        detail?.visibility = View.VISIBLE
+        button?.visibility = View.VISIBLE
+    }
+
+    private fun hideReconnectingOverlay() {
+        AppLog.i("Hiding reconnecting overlay — frames resumed")
+        overlayState = OverlayState.HIDDEN
+        val overlay = findViewById<View>(R.id.loading_overlay) ?: return
+        val detail = findViewById<TextView>(R.id.overlay_detail)
+        val button = findViewById<Button>(R.id.disconnect_button)
+        overlay.visibility = View.GONE
+        detail?.visibility = View.GONE
+        button?.visibility = View.GONE
+    }
+
     private fun sendTouchEvent(event: MotionEvent) {
         val action = TouchEvent.motionEventToAction(event) ?: return
         val ts = SystemClock.elapsedRealtime()
