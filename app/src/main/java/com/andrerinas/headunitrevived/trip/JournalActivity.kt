@@ -128,7 +128,7 @@ private class JournalDetailsScreen(carContext: CarContext, private val trip: Tri
                 .build())
             .addRow(Row.Builder()
                 .setTitle(carContext.getString(R.string.trip_duration, (trip.durationSec / 60).toInt()))
-                .addText(String.format("%.1f km", trip.distanceKm))
+                .addText(carContext.getString(R.string.trip_distance, trip.distanceKm))
                 .build())
 
         // Show events if any

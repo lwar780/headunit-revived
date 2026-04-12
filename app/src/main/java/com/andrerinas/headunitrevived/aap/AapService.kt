@@ -78,6 +78,7 @@ import com.andrerinas.headunitrevived.trip.OfflineUiService
 import com.andrerinas.headunitrevived.trip.TripJournalService
 import com.andrerinas.headunitrevived.trip.VoiceAnnouncementService
 import java.net.ServerSocket
+import java.net.Socket
 
 /**
  * Top-level foreground service that manages the Android Auto connection lifecycle.
@@ -598,15 +599,19 @@ class AapService : Service(), UsbReceiver.Listener {
     }
 
     private suspend fun connectUsbWithRetry(device: UsbDevice) { val settings = App.provide(this).settings; if (commManager.connect(device)) { settings.saveLastConnection(Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat(device).uniqueName) } }
+    
     private fun startDiscovery(oneShot: Boolean = false) {
         if (networkDiscovery == null) {
             networkDiscovery = NetworkDiscovery(this, object : NetworkDiscovery.Listener {
-                override fun onEndpointFound(address: String) {
-                    serviceScope.launch { commManager.connect(address) }
+                override fun onServiceFound(ip: String, port: Int, socket: Socket?) {
+                    serviceScope.launch { commManager.connect(socket ?: return@launch) }
+                }
+                override fun onScanFinished() {
+                    // Handle scan finish
                 }
             })
         }
-        if (oneShot) networkDiscovery?.startOneShot() else networkDiscovery?.start()
+        if (oneShot) (networkDiscovery as NetworkDiscovery).startScan() else (networkDiscovery as NetworkDiscovery).startScan()
     }
     
     private fun startWirelessServer() { 
@@ -623,12 +628,12 @@ class AapService : Service(), UsbReceiver.Listener {
     
     private fun startSelfMode() { selfMode = true; startWirelessServer(); startActivity(Intent(this, UsbAttachedActivity::class.java).apply { action = ACTION_START_SELF_MODE; addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }) }
     private fun launchMainActivityOnBoot() { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !AndroidSettings.canDrawOverlays(this)) { showOverlayPermissionNotification(); return }; val intent = Intent(this, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP); putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "boot") }; startActivity(intent) }
-    private fun showOverlayPermissionNotification() { val intent = Intent(AndroidSettings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }; val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE); (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(9002, NotificationCompat.Builder(this, "service_channel").setContentTitle(getString(R.string.overlay_permission_title)).setContentText(getString(R.string.overlay_permission_description)).setSmallIcon(R.drawable.ic_notification).setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent).setAutoCancel(true).build()) }
+    private fun showOverlayPermissionNotification() { val intent = Intent(AndroidSettings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }; val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE); (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(9002, NotificationCompat.Builder(this, "service_channel").setContentTitle(getString(R.string.overlay_permission_title)).setContentText(getString(R.string.overlay_permission_description)).setSmallIcon(R.drawable.ic_network_wifi_white).setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent).setAutoCancel(true).build()) }
     private fun launchMainActivityIfNeeded(reason: String) { if (commManager.isConnected || isSwitchingToAccessory.get()) return; val settings = App.provide(this).settings; if (settings.autoStartOnUsb) { AppLog.i("Auto-launching UI (reason=$reason)"); launchMainActivityOnBoot() } }
     private fun createNotification(): Notification {
         val channelId = "service_channel"; if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(android.app.NotificationChannel(channelId, "Headunit Service", NotificationManager.IMPORTANCE_LOW)) }
         val stopIntent = Intent(this, AapService::class.java).apply { action = ACTION_STOP_SERVICE }; val stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
-        return NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.app_name)).setContentText(getString(R.string.notification_service_running)).setSmallIcon(R.drawable.ic_notification).setOngoing(true).addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent).build()
+        return NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.app_name)).setContentText(getString(R.string.notification_service_running)).setSmallIcon(R.drawable.ic_network_wifi_white).setOngoing(true).addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent).build()
     }
     private fun updateNotification() { val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager; nm.notify(1, createNotification()) }
 

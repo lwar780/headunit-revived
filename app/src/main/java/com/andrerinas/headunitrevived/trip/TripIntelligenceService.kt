@@ -28,15 +28,16 @@ class TripIntelligenceService : Service() {
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            val timestamp = System.currentTimeMillis()
             when (intent.action) {
                 LocationUpdateIntent.action -> {
                     val location = LocationUpdateIntent.extractLocation(intent)
                     // Speed is in m/s, convert to km/h if needed by state machine (spec says km/h)
                     val speedKmH = location.speed * 3.6f
-                    updateState(TripInput.SpeedChanged(speedKmH))
+                    updateState(TripInput.SpeedChanged(speedKmH, timestamp))
                 }
-                Intent.ACTION_SCREEN_ON -> updateState(TripInput.ScreenChanged(true))
-                Intent.ACTION_SCREEN_OFF -> updateState(TripInput.ScreenChanged(false))
+                Intent.ACTION_SCREEN_ON -> updateState(TripInput.ScreenChanged(true, timestamp))
+                Intent.ACTION_SCREEN_OFF -> updateState(TripInput.ScreenChanged(false, timestamp))
             }
         }
     }
@@ -65,7 +66,7 @@ class TripIntelligenceService : Service() {
         serviceScope.launch {
             commManager.connectionState.collect { state ->
                 val connected = state is CommManager.ConnectionState.HandshakeComplete
-                updateState(TripInput.ConnectionChanged(connected))
+                updateState(TripInput.ConnectionChanged(connected, System.currentTimeMillis()))
             }
         }
     }
@@ -99,7 +100,9 @@ class TripIntelligenceService : Service() {
         }
 
         event?.let {
-            TripEventBus.getInstance().emit(it)
+            serviceScope.launch {
+                TripEventBus.getInstance().emit(it)
+            }
         }
     }
 
