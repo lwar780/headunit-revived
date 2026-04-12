@@ -48,6 +48,18 @@ import android.content.IntentFilter
 import com.andrerinas.headunitrevived.view.ProjectionViewScaler
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
+/**
+ * Android Auto projection activity with rotation support.
+ *
+ * Display features (configurable via Settings):
+ * - **Orientation modes**: SYSTEM (user), AUTO (sensor), LANDSCAPE, LANDSCAPE_REVERSE, PORTRAIT, PORTRAIT_REVERSE
+ * - **Fullscreen modes**: NONE, IMMERSIVE (hide all bars), STATUS_ONLY (hide nav only), IMMERSIVE_WITH_NOTCH (edge-to-edge)
+ * - **View modes**: SURFACE (default), TEXTURE (compatibility), GLES (GPU-accelerated with filters)
+ * - **Scaling tweaks**: forcedScale (legacy fix, SURFACE-only), stretchToFill (ignore aspect ratio)
+ * - **Night mode filter**: aaMonochromeEnabled + aaDesaturationLevel (GLES-only desaturation)
+ *
+ * Rotation handling: AUTO mode allows sensor rotation. onConfigurationChanged re-negotiates resolution.
+ */
 class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, VideoDimensionsListener {
 
     private enum class OverlayState { STARTING, RECONNECTING, HIDDEN }
@@ -177,16 +189,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         super.onCreate(savedInstanceState)
 
         val screenOrientation = settings.screenOrientation
-        if (screenOrientation == Settings.ScreenOrientation.AUTO) {
-            // AUTO mode: lock to current orientation at launch (existing behavior)
-            if (Build.VERSION.SDK_INT >= 18) {
-                requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LOCKED
-            } else {
-                requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
-            }
-        } else {
-            requestedOrientation = screenOrientation.androidOrientation
-        }
+        requestedOrientation = screenOrientation.androidOrientation
 
         setContentView(R.layout.activity_headunit)
 
@@ -451,6 +454,36 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         if (hasFocus) {
             setFullscreen() // Reapply fullscreen mode if window gains focus
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        AppLog.i("AapProjectionActivity: onConfigurationChanged - orientation=${newConfig.orientation}")
+
+        // 1. Re-initialize HeadUnitScreenConfig with new dimensions
+        HeadUnitScreenConfig.init(this, resources.displayMetrics, settings)
+
+        // 2. Update projection view scaling if video is already active
+        if (::projectionView.isInitialized && videoDecoder.videoWidth > 0 && videoDecoder.videoHeight > 0) {
+            runOnUiThread {
+                ProjectionViewScaler.updateScale(
+                    projectionView as View,
+                    videoDecoder.videoWidth,
+                    videoDecoder.videoHeight
+                )
+            }
+        }
+
+        // 3. Reapply fullscreen mode (system bars may appear during rotation)
+        setFullscreen()
+
+        // 4. Request fresh keyframe if projection is active
+        if (isSurfaceSet && commManager.connectionState.value is CommManager.ConnectionState.HandshakeComplete) {
+            commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
+        }
+
+        AppLog.i("AapProjectionActivity: New resolution: ${HeadUnitScreenConfig.getNegotiatedWidth()}x${HeadUnitScreenConfig.getNegotiatedHeight()}")
     }
 
     private fun showReconnectingOverlay() {

@@ -111,6 +111,8 @@ object HeadUnitScreenConfig {
         val selectedResolution = Settings.Resolution.fromId(currentSettings.resolutionId)
         val isPortraitDisplay = screenHeightPx > screenWidthPx
 
+        AppLog.i("CarScreen: orientation=${if (isPortraitDisplay) "portrait" else "landscape"}, using $negotiatedResolutionType")
+
         // 1. Determine base negotiated resolution
         if (selectedResolution == Settings.Resolution.AUTO) {
             if (isPortraitDisplay) {
