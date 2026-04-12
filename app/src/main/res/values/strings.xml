@@ -32,7 +32,7 @@
     <string name="night_mode_end">Night Mode End Time</string>
 
     <string name="app_theme">Dark Mode (Application)</string>
-    <string name="app_theme_description">Control the app\'s visual appearance</string>
+    <string name="app_theme_description">Control the app's visual appearance</string>
     <string name="change_app_theme">Change App Theme</string>
     <string name="monochrome_icons">Monochrome icons</string>
     <string name="monochrome_icons_description">Use grayscale icons on the home screen in Dark or Extreme Dark mode</string>
@@ -40,9 +40,9 @@
     <string name="use_extreme_dark_description">Use pure black background when dark mode is active</string>
     <string name="use_gradient_background">Use gradient background</string>
     <string name="use_gradient_background_description_on">The app draws its own background with the gradient circle centered</string>
-    <string name="use_gradient_background_description_off">The app\'s classic background is being used</string>
+    <string name="use_gradient_background_description_off">The app's classic background is being used</string>
     <string name="use_gradient_background_description_on_auto">The app draws its own background with the gradient circle centered. Does not apply to Extreme Dark mode</string>
-    <string name="use_gradient_background_description_off_auto">The app\'s classic background is being used. Does not apply to Extreme Dark mode</string>
+    <string name="use_gradient_background_description_off_auto">The app's classic background is being used. Does not apply to Extreme Dark mode</string>
     <string name="category_dark_mode">Dark Mode</string>
     <string name="category_automation">Automation</string>
     <string name="dark_mode_settings">Dark Mode Settings</string>
@@ -55,6 +55,7 @@
     <string name="gles_required_title">GLES Required</string>
     <string name="gles_required_message">Monochrome mode needs GLES rendering to apply a grayscale filter on the video output. Enable GLES?</string>
     <string name="gles_required_enable">Enable GLES</string>
+    <string name="enable_gles">Enable GLES</string>
     <string name="category_navigation">Navigation</string>
     <string name="category_wireless">Wireless Connection</string>
 
@@ -295,8 +296,8 @@
     <string name="already_searching_phone">Already searching for phone…</string>
     <string name="searching_phone">Searching for phone…</string>
     <string name="key_mappings_reset">Key mappings reset</string>
-    <string name="press_key_to_assign">Press a key to assign to \'%s\'…</string>
-    <string name="key_assigned">\' %1$s \' assigned to \' %2$s \'</string>
+    <string name="press_key_to_assign">Press a key to assign to '%s'…</string>
+    <string name="key_assigned">' %1$s ' assigned to ' %2$ s '</string>
     <string name="last_key_press">Last Key Press: %1$s (%2$d)</string>
     <string name="scan">Scan</string>
     <string name="scanning_network">Scanning Network…</string>
@@ -308,7 +309,8 @@
     <string name="stopping_service">Stopping service to apply changes…</string>
     <string name="settings_saved">Settings saved</string>
     <string name="logs_exported">Logs Exported</string>
-    <string name="log_saved_to">Log saved to:\n%s</string>
+    <string name="log_saved_to">Log saved to:
+%s</string>
     <string name="share">Share</string>
     <string name="close">Close</string>
     <string name="failed_export_logs">Failed to export logs</string>
@@ -482,4 +484,22 @@
     <string name="mic_agc_description">Boost quiet audio for better voice recognition</string>
     <string name="mic_failed_title">Microphone Failed</string>
     <string name="retry">Retry</string>
+    <string name="ok">OK</string>
+    <string name="data_st">Data</string>
+    <string name="cd_settings_gear">Open Settings</string>
+    <string name="cd_exit_button">Exit Application</string>
+    <string name="cd_status_ready">Ready to connect</string>
+    <string name="cd_status_connecting">Connecting…</string>
+    <string name="cd_status_connected">Connected</string>
+    <string name="cd_status_error">Connection error</string>
+    <string name="cd_status_unknown">Unknown status</string>
+    <string name="cd_status_not_connected">Not connected</string>
+    <string name="cd_usb_panel">USB connection status</string>
+    <string name="cd_wifi_panel">WiFi connection status</string>
+    <string name="cd_self_mode_panel">Self Mode status</string>
+    <string name="cd_mic_source">Microphone source selection</string>
+    <string name="cd_audio_output">Active audio output device</string>
+    <string name="cd_mic_indicator">Microphone active: %1$s, level: %2$s</string>
+    <string name="audio_output_unknown">Unknown output</string>
+    <string name="cd_fps_counter">Frames per second: %d</string>
 </resources>
