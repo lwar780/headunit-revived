@@ -293,7 +293,7 @@ internal class AapControlSensor(private val aapTransport: AapTransport, private 
                         .build()
                 val msg = AapMessage(message.channel, Sensors.SensorsMsgType.SENSOR_STARTRESPONSE_VALUE, response)
                 aapTransport.send(msg)
-                aapTransport.startSensor(request.type)
+                aapTransport.startSensor(request.type.number)
             }
         }
         return 0
