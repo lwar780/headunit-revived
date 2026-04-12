@@ -286,14 +286,14 @@ internal class AapControlTouch(private val aapTransport: AapTransport) : AapCont
 internal class AapControlSensor(private val aapTransport: AapTransport, private val context: Context) : AapControl {
     override fun execute(message: AapMessage): Int {
         when (message.type) {
-            Sensors.MsgType.SENSOR_START_REQUEST_VALUE -> {
-                val request = message.parse(Sensors.SensorStartRequest.newBuilder()).build()
-                val response = Sensors.SensorStartResponse.newBuilder()
+            Sensors.SensorsMsgType.SENSOR_STARTREQUEST_VALUE -> {
+                val request = message.parse(Sensors.SensorRequest.newBuilder()).build()
+                val response = Sensors.SensorResponse.newBuilder()
                         .setStatus(Common.MessageStatus.STATUS_SUCCESS)
                         .build()
-                val msg = AapMessage(message.channel, Sensors.MsgType.SENSOR_START_RESPONSE_VALUE, response)
+                val msg = AapMessage(message.channel, Sensors.SensorsMsgType.SENSOR_STARTRESPONSE_VALUE, response)
                 aapTransport.send(msg)
-                aapTransport.startSensor(request.sensorType)
+                aapTransport.startSensor(request.type)
             }
         }
         return 0
