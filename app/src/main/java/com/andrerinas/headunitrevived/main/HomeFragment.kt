@@ -361,7 +361,6 @@ class HomeFragment : Fragment() {
         }
 
         audioTestPanel.setOnClickListener {
-            App.provide(requireContext()).soundUX.play(SoundEvent.CLICK)
             findNavController().navigate(R.id.action_homeFragment_to_audioTestFragment)
         }
 
