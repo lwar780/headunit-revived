@@ -485,4 +485,5 @@
     <string name="mic_agc_description">Boost quiet audio for better voice recognition</string>
     <string name="mic_failed_title">Microphone Failed</string>
     <string name="retry">Retry</string>
+    <string name="open_settings">Open Settings</string>
 </resources>

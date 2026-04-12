@@ -166,8 +166,8 @@ internal class AapControlService(
 
     private fun voiceSessionNotification(request: Control.VoiceSessionNotification): Int {
         if (BuildConfig.DEBUG) {
-            AppLog.d("DEBUG: voiceSessionNotification() called. status=%s, thread=%s",
-                request.status, Thread.currentThread().name)
+            AppLog.d("DEBUG: voiceSessionNotification() called. status=%s",
+                request.status)
         }
 
         if (request.status == Control.VoiceSessionNotification.VoiceSessionStatus.VOICE_STATUS_START) {
