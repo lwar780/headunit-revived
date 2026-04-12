@@ -4,9 +4,6 @@
     <string name="settings">Settings</string>
 
     <string name="title_activity_settings">SettingsActivity</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY
-CONTENT</string>
     <string name="allowed">Allowed</string>
     <string name="ignored">Ignored</string>
     <string name="exit">Exit</string>
@@ -35,7 +32,7 @@ CONTENT</string>
     <string name="night_mode_end">Night Mode End Time</string>
 
     <string name="app_theme">Dark Mode (Application)</string>
-    <string name="app_theme_description">Control the app's visual appearance</string>
+    <string name="app_theme_description">Control the app\'s visual appearance</string>
     <string name="change_app_theme">Change App Theme</string>
     <string name="monochrome_icons">Monochrome icons</string>
     <string name="monochrome_icons_description">Use grayscale icons on the home screen in Dark or Extreme Dark mode</string>
@@ -43,9 +40,9 @@ CONTENT</string>
     <string name="use_extreme_dark_description">Use pure black background when dark mode is active</string>
     <string name="use_gradient_background">Use gradient background</string>
     <string name="use_gradient_background_description_on">The app draws its own background with the gradient circle centered</string>
-    <string name="use_gradient_background_description_off">The app's classic background is being used</string>
+    <string name="use_gradient_background_description_off">The app\'s classic background is being used</string>
     <string name="use_gradient_background_description_on_auto">The app draws its own background with the gradient circle centered. Does not apply to Extreme Dark mode</string>
-    <string name="use_gradient_background_description_off_auto">The app's classic background is being used. Does not apply to Extreme Dark mode</string>
+    <string name="use_gradient_background_description_off_auto">The app\'s classic background is being used. Does not apply to Extreme Dark mode</string>
     <string name="category_dark_mode">Dark Mode</string>
     <string name="category_automation">Automation</string>
     <string name="dark_mode_settings">Dark Mode Settings</string>
@@ -166,19 +163,17 @@ CONTENT</string>
     <string name="auto_start_usb_description">Automatically open the app and attempt connection when a USB device is plugged in</string>
     <string name="auto_start_settings">Auto-start settings</string>
     <string name="auto_start_settings_description">Configure when the app starts automatically</string>
-    <string name="auto_start_oem_warning">This device may require enabling auto-start and removing battery optimization or background restrictions for this app.
-
-On head units with Quick Boot (fast boot), auto-start may not work. Look for "DuraSpeed" in your system settings and enable this app there. On some head units, DuraSpeed is hidden and you may need an app like "Hidden Settings" to find it. If you don't have DuraSpeed, try disabling Quick Boot.</string>
+    <string name="auto_start_oem_warning">This device may require enabling auto-start and removing battery optimization or background restrictions for this app.\n\nOn head units with Quick Boot (fast boot), auto-start may not work. Look for \"DuraSpeed\" in your system settings and enable this app there. On some head units, DuraSpeed is hidden and you may need an app like \"Hidden Settings\" to find it. If you don\'t have DuraSpeed, try disabling Quick Boot.</string>
     <string name="auto_start_on_boot_label">Start on boot</string>
-    <string name="auto_start_on_boot_description">Open the app automatically when the device starts up. Requires 'Display over other apps' permission on Android 10+</string>
+    <string name="auto_start_on_boot_description">Open the app automatically when the device starts up. Requires \'Display over other apps\' permission on Android 10+</string>
     <string name="auto_start_screen_on_label">Start on screen on</string>
-    <string name="auto_start_screen_on_description">Open the app every time the screen turns on. Ideal for head units that never fully shut down or use fast boot modes where the other auto-start options don't work. Not recommended for phones or tablets.</string>
+    <string name="auto_start_screen_on_description">Open the app every time the screen turns on. Ideal for head units that never fully shut down or use fast boot modes where the other auto-start options don\'t work. Not recommended for phones or tablets.</string>
     <string name="select_bt_device">Select Bluetooth Device</string>
     <string name="bt_device_not_set">Not set</string>
     <string name="bt_permission_denied_title">Bluetooth Permission Required</string>
     <string name="bt_permission_denied_message">Bluetooth permission is required to select paired devices. Please grant it in app settings.</string>
     <string name="overlay_permission_title">Background Start Permission</string>
-    <string name="overlay_permission_description">To allow Headunit Revived to open automatically when Bluetooth connects, please enable the "Display over other apps" permission in the next screen.</string>
+    <string name="overlay_permission_description">To allow Headunit Revived to open automatically when Bluetooth connects, please enable the \"Display over other apps\" permission in the next screen.</string>
     <string name="open_settings">Open Settings</string>
     <string name="right_hand_drive">Right-hand drive</string>
     <string name="right_hand_drive_description">Position UI for right-side driving</string>
@@ -300,8 +295,8 @@ On head units with Quick Boot (fast boot), auto-start may not work. Look for "Du
     <string name="already_searching_phone">Already searching for phone…</string>
     <string name="searching_phone">Searching for phone…</string>
     <string name="key_mappings_reset">Key mappings reset</string>
-    <string name="press_key_to_assign">Press a key to assign to '%s'…</string>
-    <string name="key_assigned">'%1$s' assigned to '%2$s'</string>
+    <string name="press_key_to_assign">Press a key to assign to \'%s\'…</string>
+    <string name="key_assigned">\' %1$s \' assigned to \' %2$s \'</string>
     <string name="last_key_press">Last Key Press: %1$s (%2$d)</string>
     <string name="scan">Scan</string>
     <string name="scanning_network">Scanning Network…</string>
@@ -313,8 +308,7 @@ On head units with Quick Boot (fast boot), auto-start may not work. Look for "Du
     <string name="stopping_service">Stopping service to apply changes…</string>
     <string name="settings_saved">Settings saved</string>
     <string name="logs_exported">Logs Exported</string>
-    <string name="log_saved_to">Log saved to:
-%s</string>
+    <string name="log_saved_to">Log saved to:\n%s</string>
     <string name="share">Share</string>
     <string name="close">Close</string>
     <string name="failed_export_logs">Failed to export logs</string>
@@ -329,7 +323,7 @@ On head units with Quick Boot (fast boot), auto-start may not work. Look for "Du
     <string name="android_auto_starting">Android Auto is starting…</string>
     <string name="connection_interrupted">Connection lost</string>
     <string name="connection_interrupted_detail">Retrying…</string>
-    <string name="wifi_disconnect_toast">Android Auto disconnected: If using wireless AA, disable "Switch between networks" or "Network acceleration" in phone WiFi settings</string>
+    <string name="wifi_disconnect_toast">Android Auto disconnected: If using wireless AA, disable \"Switch between networks\" or \"Network acceleration\" in phone WiFi settings</string>
     <string name="reset_usb_option">Reset USB Connection</string>
     <string name="reset_usb_timeout">USB device not found. Please check connection.</string>
     <string name="notification_service_running">Headunit Revived is running</string>
@@ -349,15 +343,13 @@ On head units with Quick Boot (fast boot), auto-start may not work. Look for "Du
     <string name="shortcut_night_mode_night_title">Mode: Night</string>
     <string name="shortcut_night_mode_night_desc">Force night mode</string>
     <string name="setup_welcome_title">Quick Setup</string>
-    <string name="setup_welcome_msg">This wizard helps you choose the best settings for a smooth Android Auto experience.
-
-You can always change these settings later or restart this wizard from the app settings.</string>
+    <string name="setup_welcome_msg">This wizard helps you choose the best settings for a smooth Android Auto experience.\n\nYou can always change these settings later or restart this wizard from the app settings.</string>
     <string name="setup_start">Start</string>
     <string name="setup_size_title">Display Size</string>
-    <string name="setup_size_phone">Phone / Small (4-6")</string>
-    <string name="setup_size_small">Small Tablet (7-8")</string>
-    <string name="setup_size_standard">Standard (9-10")</string>
-    <string name="setup_size_large">Large (11"+)</string>
+    <string name="setup_size_phone">Phone / Small (4-6\")</string>
+    <string name="setup_size_small">Small Tablet (7-8\")</string>
+    <string name="setup_size_standard">Standard (9-10\")</string>
+    <string name="setup_size_large">Large (11\"+)</string>
     <string name="setup_orientation_title">Device Orientation</string>
     <string name="setup_orientation_landscape">Landscape (Horizontal)</string>
     <string name="setup_orientation_portrait">Portrait (Vertical)</string>
@@ -369,7 +361,7 @@ You can always change these settings later or restart this wizard from the app s
 
     <!-- Navigation notifications (from any AA nav app) -->
     <string name="show_navigation_notifications">Navigation notifications</string>
-    <string name="show_navigation_notifications_description">Show "In X meters do Y" and current street in notifications (for debugging)</string>
+    <string name="show_navigation_notifications_description">Show \"In X meters do Y\" and current street in notifications (for debugging)</string>
     <string name="nav_notification_channel_name">Navigation</string>
     <string name="nav_notification_channel_description">Turn-by-turn navigation updates from Android Auto</string>
     <string name="nav_notification_title_format">In %1$d m — %2$s</string>
@@ -397,7 +389,7 @@ You can always change these settings later or restart this wizard from the app s
     <!-- Auto-start permission strings -->
     <string name="reopen_on_reconnection_label">Reopen on reconnection</string>
     <string name="reopen_on_reconnection_description">When you press the Exit button, the app stays running in the background and continues monitoring USB connections. If a device reconnects, the app reopens automatically.</string>
-    <string name="overlay_permission_required">Auto-start requires 'Display over other apps' permission</string>
+    <string name="overlay_permission_required">Auto-start requires \'Display over other apps\' permission</string>
     <string name="usb_permission_denied">USB permission denied. Please allow USB access to connect automatically.</string>
     <string name="overlay_permission_denied_auto_start_disabled">Overlay permission not granted. Auto-start has been disabled.</string>
 
@@ -410,20 +402,12 @@ You can always change these settings later or restart this wizard from the app s
     <string name="kill_on_disconnect">Close app on disconnect</string>
     <string name="kill_on_disconnect_description">Automatically close the app when Android Auto disconnects</string>
     <string name="kill_on_disconnect_warning_title">Warning</string>
-    <string name="kill_on_disconnect_warning">The following reconnection settings will conflict with closing the app on disconnect:
-
-%1$s
-
-Your initial connection settings (auto-connect, auto-start) will still work when the headunit turns on. However, after the first disconnection the app will close immediately instead of trying to reconnect.
-
-Note: Some aftermarket head units never fully shut down — they hibernate instead, similar to a phone that locks its screen but never actually powers off. With this option enabled, the app will close after the first disconnection and may not reopen automatically on the next ignition cycle.
-
-Would you like to disable the reconnection settings listed above?</string>
+    <string name="kill_on_disconnect_warning">The following reconnection settings will conflict with closing the app on disconnect:\n\n%1$s\n\nYour initial connection settings (auto-connect, auto-start) will still work when the headunit turns on. However, after the first disconnection the app will close immediately instead of trying to reconnect.\n\nNote: Some aftermarket head units never fully shut down — they hibernate instead, similar to a phone that locks its screen but never actually powers off. With this option enabled, the app will close after the first disconnection and may not reopen automatically on the next ignition cycle.\n\nWould you like to disable the reconnection settings listed above?</string>
     <string name="kill_on_disconnect_disable_and_enable">Disable and enable</string>
     <string name="kill_on_disconnect_enable_anyway">Enable anyway</string>
     <string name="kill_on_disconnect_conflicts_disabled">Conflicting settings have been disabled</string>
-    <string name="kill_on_disconnect_boot_warning">You have "Start on boot" enabled. If the app closes on disconnect and this device hibernates instead of shutting down, the app may not reopen automatically on the next ignition cycle because no boot event is triggered — the device simply wakes up from sleep.</string>
-    <string name="kill_on_disconnect_screen_on_warning">You have "Start on screen on" enabled. This setting opens the app every time the screen turns on. Combined with closing on disconnect, the app will close after disconnection but reopen immediately when the screen turns on again, creating a restart loop.</string>
+    <string name="kill_on_disconnect_boot_warning">You have \"Start on boot\" enabled. If the app closes on disconnect and this device hibernates instead of shutting down, the app may not reopen automatically on the next ignition cycle because no boot event is triggered — the device simply wakes up from sleep.</string>
+    <string name="kill_on_disconnect_screen_on_warning">You have \"Start on screen on\" enabled. This setting opens the app every time the screen turns on. Combined with closing on disconnect, the app will close after disconnection but reopen immediately when the screen turns on again, creating a restart loop.</string>
 
     <string name="wifi_disabled_info">Info: Wi-Fi is disabled.</string>
     <string name="bt_not_enabled">Bluetooth is disabled</string>
@@ -453,28 +437,21 @@ Would you like to disable the reconnection settings listed above?</string>
     <string name="vehicle_info_restart_note">This data is sent to Android Auto every time you connect.</string>
 
     <string name="auto_enable_hotspot">Auto-Enable Hotspot</string>
-    <string name="auto_enable_hotspot_description">Automatically starts a Wi-Fi hotspot on this device. (Won't work on every device)</string>
+    <string name="auto_enable_hotspot_description">Automatically starts a Wi-Fi hotspot on this device. (Won\'t work on every device)</string>
     <string name="hotspot_warning_title">Experimental Feature</string>
-    <string name="hotspot_warning_message">This feature uses reflection and might not work on all devices. It may also require the "Modify system settings" permission to be granted manually.</string>
+    <string name="hotspot_warning_message">This feature uses reflection and might not work on all devices. It may also require the \"Modify system settings\" permission to be granted manually.</string>
     <string name="hotspot_permission_title">Permission Required</string>
-    <string name="hotspot_permission_message">The hotspot feature requires the "Modify system settings" permission. Please enable it in the next screen.</string>
+    <string name="hotspot_permission_message">The hotspot feature requires the \"Modify system settings\" permission. Please enable it in the next screen.</string>
 
     <string name="supported_nativeaa">Enhanced Wireless Support</string>
-    <string name="supported_nativeaa_desc">Great news! Your device supports "Native Wireless" mode, which provides a more seamless Android Auto experience. 
-
-To enable this, we need to refresh your Bluetooth cache. Please: 
-1. Remove the existing pairing on your phone 
-2. Click OK to restart Bluetooth 
-3. Re-pair your phone 
-
-Would you like to switch to Native AA mode now?</string>
+    <string name="supported_nativeaa_desc">Great news! Your device supports \"Native Wireless\" mode, which provides a more seamless Android Auto experience. \n\nTo enable this, we need to refresh your Bluetooth cache. Please: \n1. Remove the existing pairing on your phone \n2. Click OK to restart Bluetooth \n3. Re-pair your phone \n\nWould you like to switch to Native AA mode now?</string>
     <string name="not_supported_nativeaa">Native Wireless seems not supported</string>
-    <string name="not_supported_nativeaa_desc">Your device might not support the required Bluetooth or Wi-Fi features for Native Wireless. You can try it anyway, but if it fails, please use the "Wireless Helper" or "Auto (Headunit Server)" mode instead.</string>
+    <string name="not_supported_nativeaa_desc">Your device might not support the required Bluetooth or Wi-Fi features for Native Wireless. You can try it anyway, but if it fails, please use the \"Wireless Helper\" or \"Auto (Headunit Server)\" mode instead.</string>
 
     <string name="wait_for_wifi">Wait for WiFi before WiFi Direct</string>
     <string name="wait_for_wifi_description">On boot, wait for WiFi to connect before starting WiFi Direct. Enable this if your head unit needs a few seconds to connect to WiFi after power on.</string>
     <string name="wait_for_wifi_timeout">WiFi wait timeout</string>
-    <string name="wireless_24ghz_warning">Note: Wireless Android Auto on 2.4GHz devices can lead to lag, stutters, and disconnects. If you experience issues, please test via USB to confirm if it's a network limitation.</string>
+    <string name="wireless_24ghz_warning">Note: Wireless Android Auto on 2.4GHz devices can lead to lag, stutters, and disconnects. If you experience issues, please test via USB to confirm if it\'s a network limitation.</string>
     <string name="fake_speed_title">Disable Video-Lock (Fake Speed)</string>
     <string name="fake_speed_description">Reports a constant low speed (0.5 m/s) to the phone to prevent video content from being blocked while driving. Use with caution.</string>
     <string name="wireless_mode_helper">Wireless Helper</string>
@@ -505,5 +482,4 @@ Would you like to switch to Native AA mode now?</string>
     <string name="mic_agc_description">Boost quiet audio for better voice recognition</string>
     <string name="mic_failed_title">Microphone Failed</string>
     <string name="retry">Retry</string>
-    <string name="mic_agc_short">AGC</string>
 </resources>
