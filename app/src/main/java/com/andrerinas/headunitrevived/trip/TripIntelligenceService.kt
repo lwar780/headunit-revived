@@ -92,9 +92,8 @@ class TripIntelligenceService : Service() {
                 TripEvent.ParkingDetected(timestamp, "Unknown")
             }
             TripState.ENGINE_OFF -> {
-                // TripEnded event is typically triggered here with calculated stats
-                // For now, publishing a generic TripEnded
-                TripEvent.TripEnded(0L, timestamp, 0.0, "[]")
+                // For now, publishing a generic TripEnded with placeholder stats
+                TripEvent.TripEnded(startTime = 0L, endTime = timestamp, distanceKm = 0.0, eventsJson = "[]")
             }
             else -> null
         }

@@ -272,7 +272,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                                 runOnUiThread {
                                     val overlay = findViewById<View>(R.id.signal_loss_overlay)
                                     overlay?.visibility = View.VISIBLE
-                                    signalLossLastUpdateMs = event.timestamp
+                                    signalLossLastUpdateMs = event.lastUpdateTimestamp
                                     watchdogHandler.post(signalLossUpdateRunnable)
                                 }
                             }

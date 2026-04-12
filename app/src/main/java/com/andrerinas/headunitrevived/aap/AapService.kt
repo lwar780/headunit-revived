@@ -29,6 +29,7 @@ import android.os.Parcelable
 import android.os.PowerManager
 import android.os.SystemClock
 import android.widget.Toast
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
@@ -554,7 +555,7 @@ class AapService : Service(), UsbReceiver.Listener {
     override fun onUsbDetach(device: UsbDevice) { userExitedAA = false; if (commManager.isConnectedToUsbDevice(device)) commManager.disconnect(sendByeBye = false) }
     override fun onUsbAccessoryDetach() { userExitedAA = false; if (commManager.isConnected) commManager.disconnect(sendByeBye = false); serviceScope.launch { delay(1500); checkAlreadyConnectedUsb(force = true) } }
     override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) { if (granted) { if (UsbDeviceCompat.isInAccessoryMode(device)) { isSwitchingToAccessory.set(true); serviceScope.launch { try { connectUsbWithRetry(device) } finally { isSwitchingToAccessory.set(false) } } } else { isSwitchingToAccessory.set(true); serviceScope.launch(Dispatchers.IO) { try { if (UsbAccessoryMode(getSystemService(Context.USB_SERVICE) as UsbManager).connectAndSwitch(device)) {} } finally { isSwitchingToAccessory.set(false) } } } } else Toast.makeText(this, getString(R.string.usb_permission_denied), Toast.LENGTH_LONG).show() }
-    private fun requestUsbPermission(device: UsbDevice) { (getSystemService(Context.USB_SERVICE) as UsbManager).requestPermission(device, UsReceiver.createPermissionPendingIntent(this)) }
+    private fun requestUsbPermission(device: UsbDevice) { (getSystemService(Context.USB_SERVICE) as UsbManager).requestPermission(device, UsbReceiver.createPermissionPendingIntent(this)) }
     private fun onHandshakeFailed() {
         val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
         val accessoryDevice = usbManager.deviceList.values.firstOrNull { UsbDeviceCompat.isInAccessoryMode(it) } ?: return
@@ -597,9 +598,29 @@ class AapService : Service(), UsbReceiver.Listener {
     }
 
     private suspend fun connectUsbWithRetry(device: UsbDevice) { val settings = App.provide(this).settings; if (commManager.connect(device)) { settings.saveLastConnection(Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat(device).uniqueName) } }
-    private fun startDiscovery(oneShot: Boolean = false) { if (networkDiscovery == null) networkDiscovery = NetworkDiscovery(this) { address -> serviceScope.launch { commManager.connect(address) } }; if (oneShot) networkDiscovery?.startOneShot() else networkDiscovery?.start() }
-    private fun startWirelessServer() { if (wirelessServer == null) { wirelessServer = WirelessServer(5288) { socket -> serviceScope.launch { commManager.connect(socket) } }; wirelessServer?.start() } }
-    private fun stopWirelessServer() { wirelessServer?.stop(); wirelessServer = null }
+    private fun startDiscovery(oneShot: Boolean = false) {
+        if (networkDiscovery == null) {
+            networkDiscovery = NetworkDiscovery(this, object : NetworkDiscovery.Listener {
+                override fun onEndpointFound(address: String) {
+                    serviceScope.launch { commManager.connect(address) }
+                }
+            })
+        }
+        if (oneShot) networkDiscovery?.startOneShot() else networkDiscovery?.start()
+    }
+    
+    private fun startWirelessServer() { 
+        if (wirelessServer == null) { 
+            wirelessServer = WirelessServer()
+            wirelessServer?.start() 
+        } 
+    }
+    
+    private fun stopWirelessServer() { 
+        wirelessServer?.stopServer()
+        wirelessServer = null 
+    }
+    
     private fun startSelfMode() { selfMode = true; startWirelessServer(); startActivity(Intent(this, UsbAttachedActivity::class.java).apply { action = ACTION_START_SELF_MODE; addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }) }
     private fun launchMainActivityOnBoot() { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !AndroidSettings.canDrawOverlays(this)) { showOverlayPermissionNotification(); return }; val intent = Intent(this, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP); putExtra(MainActivity.EXTRA_LAUNCH_SOURCE, "boot") }; startActivity(intent) }
     private fun showOverlayPermissionNotification() { val intent = Intent(AndroidSettings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }; val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE); (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(9002, NotificationCompat.Builder(this, "service_channel").setContentTitle(getString(R.string.overlay_permission_title)).setContentText(getString(R.string.overlay_permission_description)).setSmallIcon(R.drawable.ic_notification).setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent).setAutoCancel(true).build()) }
@@ -610,6 +631,98 @@ class AapService : Service(), UsbReceiver.Listener {
         return NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.app_name)).setContentText(getString(R.string.notification_service_running)).setSmallIcon(R.drawable.ic_notification).setOngoing(true).addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent).build()
     }
     private fun updateNotification() { val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager; nm.notify(1, createNotification()) }
+
+    private inner class WirelessServer {
+        private var serverSocket: ServerSocket? = null
+        private var nsdManager: NsdManager? = null
+        private var registrationListener: NsdManager.RegistrationListener? = null
+        private var job: Job? = null
+
+        fun start(registerNsd: Boolean = true) {
+            nsdManager = getSystemService(Context.NSD_SERVICE) as? NsdManager
+            if (nsdManager == null) {
+                AppLog.e("WirelessServer: NsdManager not available on this device.")
+            } else if (registerNsd) {
+                registerNsd()
+            }
+
+            job = serviceScope.launch(Dispatchers.IO) {
+                try {
+                    serverSocket = ServerSocket(5288).apply { reuseAddress = true }
+                    AppLog.i("Wireless Server listening on port 5288")
+                    logLocalNetworkInterfaces()
+
+                    while (isActive) {
+                        AppLog.d("WirelessServer: Waiting for TCP connection on port 5288...")
+                        val clientSocket = serverSocket?.accept() ?: break
+                        AppLog.i("WirelessServer: Incoming connection detected from ${clientSocket.inetAddress}")
+                        serviceScope.launch {
+                            if (commManager.isConnected) {
+                                AppLog.w("WirelessServer: Already connected, dropping client from ${clientSocket.inetAddress}")
+                                withContext(Dispatchers.IO) {
+                                    try { clientSocket.close() } catch (e: Exception) {}
+                                }
+                            } else {
+                                AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
+                                commManager.connect(clientSocket)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    if (isActive) AppLog.e("Wireless server error", e)
+                } finally {
+                    unregisterNsd()
+                    try { serverSocket?.close() } catch (e: Exception) {}
+                }
+            }
+        }
+
+        /** Logs all non-loopback IPv4 addresses; useful for debugging connectivity issues. */
+        private fun logLocalNetworkInterfaces() {
+            try {
+                val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+                while (interfaces.hasMoreElements()) {
+                    val iface = interfaces.nextElement()
+                    val addresses = iface.inetAddresses
+                    while (addresses.hasMoreElements()) {
+                        val addr = addresses.nextElement()
+                        if (!addr.isLoopbackAddress && addr is java.net.Inet4Address) {
+                            AppLog.i("Interface: ${iface.name}, IP: ${addr.hostAddress}")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                AppLog.e("Error logging interfaces", e)
+            }
+        }
+
+        private fun registerNsd() {
+            val serviceInfo = NsdServiceInfo().apply {
+                serviceName = "AAWireless"
+                serviceType = "_aawireless._tcp"
+                port = 5288
+            }
+            registrationListener = object : NsdManager.RegistrationListener {
+                override fun onServiceRegistered(info: NsdServiceInfo) = AppLog.i("NSD Registered: ${info.serviceName}")
+                override fun onRegistrationFailed(info: NsdServiceInfo, err: Int) = AppLog.e("NSD Reg Fail: $err")
+                override fun onServiceUnregistered(info: NsdServiceInfo) = AppLog.i("NSD Unregistered")
+                override fun onUnregistrationFailed(info: NsdServiceInfo, err: Int) = AppLog.e("NSD Unreg Fail: $err")
+            }
+            nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+        }
+
+        private fun unregisterNsd() {
+            registrationListener?.let { nsdManager?.unregisterService(it) }
+            registrationListener = null
+        }
+
+        fun stopServer() {
+            job?.cancel()
+            job = null
+            // Close the socket to unblock the accept() call in the coroutine.
+            try { serverSocket?.close() } catch (e: Exception) {}
+        }
+    }
 
     companion object {
         const val ACTION_START_SELF_MODE = "com.andrerinas.headunitrevived.START_SELF_MODE"
@@ -622,7 +735,8 @@ class AapService : Service(), UsbReceiver.Listener {
         const val ACTION_CONNECT_SOCKET = "com.andrerinas.headunitrevived.CONNECT_SOCKET"
         const val ACTION_NATIVE_AA_POKE = "com.andrerinas.headunitrevived.NATIVE_AA_POKE"
         const val ACTION_NEARBY_CONNECT = "com.andrerinas.headunitrevived.NEARBY_CONNECT"
-        const val EXTRA_MAC = "mac"; const val EXTRA_ENDPOINT_ID = "endpoint_id"
+        const val EXTRA_MAC = "mac"
+        const val EXTRA_ENDPOINT_ID = "endpoint_id"
         const val ACTION_NIGHT_MODE_CHANGED = "com.andrerinas.headunitrevived.NIGHT_MODE_CHANGED"
         const val ACTION_REQUEST_NIGHT_MODE_UPDATE = "com.andrerinas.headunitrevived.REQUEST_NIGHT_MODE_UPDATE"
         private const val HIBERNATE_WAKE_THRESHOLD_MS = 30_000L
@@ -630,5 +744,7 @@ class AapService : Service(), UsbReceiver.Listener {
         private const val USB_RECONNECT_DELAY_MS = 2000L
         private const val MAX_STALE_ACCESSORY_RETRIES = 3
         var selfMode = false
+        val wifiDirectName = MutableStateFlow<String?>(null)
+        val scanningState = MutableStateFlow<Boolean>(false)
     }
 }

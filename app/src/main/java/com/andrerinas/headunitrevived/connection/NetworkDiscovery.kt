@@ -3,6 +3,7 @@ package com.andrerinas.headunitrevived.connection
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Build
+import com.andrerinas.headunitrevived.aap.AapService
 import com.andrerinas.headunitrevived.utils.AppLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -34,6 +35,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
 
         reportedIps.clear()
         AppLog.i("NetworkDiscovery: Starting scan...")
+        AapService.scanningState.value = true
 
         scanJob = CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -51,6 +53,7 @@ class NetworkDiscovery(private val context: Context, private val listener: Liste
                 scanSubnet()
             } finally {
                 withContext(Dispatchers.Main) {
+                    AapService.scanningState.value = false
                     listener.onScanFinished()
                 }
             }

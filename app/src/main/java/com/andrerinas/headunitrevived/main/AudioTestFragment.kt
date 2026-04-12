@@ -23,6 +23,7 @@ import androidx.navigation.fragment.findNavController
 import com.andrerinas.headunitrevived.App
 import com.andrerinas.headunitrevived.R
 import com.andrerinas.headunitrevived.utils.AppLog
+import com.andrerinas.headunitrevived.utils.PlatformGuard
 import kotlinx.coroutines.*
 import kotlin.math.PI
 import kotlin.math.log10

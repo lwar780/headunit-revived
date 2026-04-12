@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.andrerinas.headunitrevived.utils.AppLog
 import android.content.res.Configuration
 import com.andrerinas.headunitrevived.utils.Settings
+import com.andrerinas.headunitrevived.utils.PlatformGuard
 import com.andrerinas.headunitrevived.utils.SetupWizard
 import com.andrerinas.headunitrevived.utils.SystemUI
 import kotlinx.coroutines.Dispatchers
@@ -108,7 +109,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun setupWifiDirectInfo() {
-        val tvInfo = findViewById<android.widget.TextView>(R.id.wifi_direct_info)
+        val tvInfo = findViewById<android.widget.TextView>(R.id.wifi_direct_info) ?: return
         val settings = Settings(this)
 
         lifecycleScope.launch {
