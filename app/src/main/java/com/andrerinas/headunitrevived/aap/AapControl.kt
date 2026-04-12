@@ -274,7 +274,7 @@ internal class AapControlTouch(private val aapTransport: AapTransport) : AapCont
     }
 
     private fun inputBinding(request: Input.KeyBindingRequest, channel: Int): Int {
-        val response = Input.KeyBindingResponse.newBuilder()
+        val response = Input.BindingResponse.newBuilder()
                 .setStatus(Common.MessageStatus.STATUS_SUCCESS)
                 .build()
         val msg = AapMessage(channel, Input.MsgType.BINDINGRESPONSE_VALUE, response)
