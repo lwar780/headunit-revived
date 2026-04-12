@@ -481,7 +481,5 @@
     <string name="retry">Retry</string>
     <string name="ok">OK</string>
     <string name="data_st">Data</string>
-    <string name="cd_status_unknown">Unknown status</string>
-    <string name="cd_status_searching">Searching…</string>
     <string name="audio_output_unknown">Unknown output</string>
 </resources>
