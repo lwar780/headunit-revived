@@ -225,18 +225,20 @@ internal class AapControlService(
 internal class AapControlMedia(private val aapTransport: AapTransport, private val micRecorder: MicRecorder, private val aapAudio: AapAudio) : AapControl {
     override fun execute(message: AapMessage): Int {
         when (message.type) {
-            Media.MediaMsgType.MESSAGE_MEDIA_CHANNEL_INDICATOR_VALUE -> {
-                val notification = message.parse(Media.MediaChannelIndicator.newBuilder()).build()
-                aapTransport.setSessionId(message.channel, notification.sessionId)
+            Media.MsgType.MEDIA_MESSAGE_DATA_VALUE -> {
+                // Handled in audio/video decoders
             }
-            Media.MediaMsgType.MESSAGE_MEDIA_SETUP_REQUEST_VALUE -> {
+            Media.MsgType.MEDIA_MESSAGE_CODEC_CONFIG_VALUE -> {
+                // Handled in audio/video decoders
+            }
+            Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE -> {
                 val response = Media.MediaSetupResponse.newBuilder()
                         .setStatus(Common.MessageStatus.STATUS_SUCCESS)
                         .build()
-                val msg = AapMessage(message.channel, Media.MediaMsgType.MESSAGE_MEDIA_SETUP_RESPONSE_VALUE, response)
+                val msg = AapMessage(message.channel, Media.MsgType.MEDIA_MESSAGE_SETUP_RESPONSE_VALUE, response)
                 aapTransport.send(msg)
             }
-            Media.MediaMsgType.MESSAGE_AUDIO_FOCUS_REQUEST_VALUE -> {
+            Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_REQUEST_VALUE -> {
                 val focusRequest = message.parse(Media.VideoFocusRequest.newBuilder()).build()
                 if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_NATIVE) {
                     AppLog.i("Video Focus NATIVE received. User likely clicked Exit. Stopping transport.")
@@ -246,11 +248,11 @@ internal class AapControlMedia(private val aapTransport: AapTransport, private v
                     val response = Media.VideoFocusResponse.newBuilder()
                             .setFocusStatus(Media.VideoFocusStatus.VIDEO_FOCUS_PROJECTED)
                             .build()
-                    val msg = AapMessage(message.channel, Media.MediaMsgType.MESSAGE_VIDEO_FOCUS_RESPONSE_VALUE, response)
+                    val msg = AapMessage(message.channel, Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_NOTIFICATION_VALUE, response)
                     aapTransport.send(msg)
                 }
             }
-            Media.MediaMsgType.MESSAGE_MICROPHONE_REQUEST_VALUE -> {
+            Media.MsgType.MEDIA_MESSAGE_MICROPHONE_REQUEST_VALUE -> {
                 val micRequest = message.parse(Media.MicrophoneRequest.newBuilder()).build()
                 if (micRequest.open) {
                     micRecorder.start()
