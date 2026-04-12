@@ -156,6 +156,7 @@ class AudioTestFragment : Fragment() {
     private fun showPermissionError() {
         updateMicStatus(getString(R.string.audio_test_permission_needed), true)
         openSettingsButton.visibility = View.VISIBLE
+        openSettingsButton.text = getString(R.string.open_settings)
     }
 
     private fun attemptStartRecording() {

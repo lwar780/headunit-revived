@@ -139,7 +139,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:layout_marginTop="8dp"
-                        android:text="@string/audio_test_open_settings"
+                        android:text="@string/open_settings"
                         android:visibility="gone"
                         tools:visibility="visible" />
 
