@@ -1,5 +1,6 @@
 package com.andrerinas.headunitrevived.aap
 
+import com.andrerinas.headunitrevived.utils.PlatformGuard
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -170,7 +171,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (PlatformGuard.hasElevation) {
             enableEdgeToEdge()
         }
         super.onCreate(savedInstanceState)
@@ -502,7 +503,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun showExitDialog() {
         val items = mutableListOf(getString(R.string.exit_dialog_stop))
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (PlatformGuard.hasPipSupport(this)) {
             items.add(getString(R.string.exit_dialog_pip))
         }
         
@@ -530,7 +531,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     private fun enterPiP() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (PlatformGuard.hasPipSupport(this)) {
             try {
                 val params = android.app.PictureInPictureParams.Builder()
                     // Default aspect ratio for AA (usually 16:9 or 16:10)
@@ -551,7 +552,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        if (PlatformGuard.hasPipSupport(this)) {
+            super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        }
         if (isInPictureInPictureMode) {
             // Hide UI elements during PiP (like FPS counter, loading overlay)
             findViewById<View>(R.id.loading_overlay)?.visibility = View.GONE

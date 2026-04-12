@@ -6,7 +6,7 @@ import android.widget.FrameLayout
 
 /**
  * Lightweight performance-focused container. 
- * Stripped of theme and blur overhead.
+ * Stripped of all design and blur overhead for maximum responsiveness.
  */
 open class GlassView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -15,14 +15,14 @@ open class GlassView @JvmOverloads constructor(
     enum class GlassState { IDLE, READY, ACTIVE, WARNING, ERROR }
 
     fun setGlassState(state: GlassState) {
-        // No-op in performance mode
+        // No-op for performance
     }
 
     fun setShowProgress(show: Boolean) {
-        // No-op in performance mode
+        // No-op for performance
     }
 
     fun setScanning(scanning: Boolean) {
-        // No-op in performance mode
+        // No-op for performance
     }
 }

@@ -66,6 +66,7 @@ import com.andrerinas.headunitrevived.connection.CarKeyReceiver
 import com.andrerinas.headunitrevived.connection.NativeAaHandshakeManager
 import com.andrerinas.headunitrevived.connection.NearbyManager
 import com.andrerinas.headunitrevived.utils.Settings
+import com.andrerinas.headunitrevived.utils.PlatformGuard
 import java.net.ServerSocket
 
 /**
@@ -1616,7 +1617,7 @@ class AapService : Service(), UsbReceiver.Listener {
         val stopPendingIntent = PendingIntent.getService(
             this, 0,
             Intent(this, AapService::class.java).apply { action = ACTION_STOP_SERVICE },
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE
+            if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE
             else PendingIntent.FLAG_UPDATE_CURRENT
         )
 
