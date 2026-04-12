@@ -59,11 +59,15 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
     private var lastStatusUpdateMs = 0L
     private var lastLogMs = 0L
     private var framesRead = 0L
+    
+    private var consecutiveSilentFrames = 0
 
     companion object {
         const val SOURCE_BLUETOOTH_SCO = 100
+        const val RECOVERY_NEEDED_SENTINEL = -999
         private const val STATUS_INTERVAL_MS = 200L
         private const val LOG_INTERVAL_MS = 5000L
+        private const val MAX_SILENT_FRAMES_BEFORE_RECOVERY = 40 // ~2s at standard read cadence
 
         fun sourceNameFor(source: Int): String = when (source) {
             MediaRecorder.AudioSource.DEFAULT -> "Default"
@@ -92,7 +96,9 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
 
         audioRecord?.apply {
             try {
-                stop()
+                if (recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                    stop()
+                }
                 release()
             } catch (e: Exception) {
                 AppLog.e("MicRecorder: Error releasing AudioRecord", e)
@@ -144,6 +150,17 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
             val rms = sqrt(sum.toDouble() / sampleCount).toFloat()
             val rmsDb = if (rms > 0) 20f * log10(rms / 32768f) else -96f
 
+            if (rmsDb < -90f) {
+                consecutiveSilentFrames++
+                if (consecutiveSilentFrames >= MAX_SILENT_FRAMES_BEFORE_RECOVERY) {
+                    AppLog.w("MicRecorder: Stuck at silence (%.1f dB) for 2s, attempting source recovery", rmsDb)
+                    consecutiveSilentFrames = 0
+                    return RECOVERY_NEEDED_SENTINEL
+                }
+            } else {
+                consecutiveSilentFrames = 0
+            }
+
             val now = SystemClock.elapsedRealtime()
 
             // Status callback throttled to 200ms
@@ -177,6 +194,7 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
         framesRead = 0
         lastStatusUpdateMs = 0
         lastLogMs = 0
+        consecutiveSilentFrames = 0
 
         val configuredSource = settings.micInputSource
 
@@ -200,29 +218,60 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
             MediaRecorder.AudioSource.MIC,
             MediaRecorder.AudioSource.DEFAULT,
             MediaRecorder.AudioSource.VOICE_COMMUNICATION
-        ).distinct() // Remove duplicates if preferred == MIC or DEFAULT
+        ).distinct()
 
-        for (source in fallbackChain) {
-            if (tryInitSource(source)) {
-                AppLog.i("MicRecorder: Using source %s (preferred was %s)",
-                    sourceNameFor(source), sourceNameFor(preferredSource))
-                activeSourceName = sourceNameFor(source)
-                audioRecord?.startRecording()
-                threadMicAudioActive = true
-                threadMicAudio = Thread({
-                    while (threadMicAudioActive) {
-                        micAudioRead(micAudioBuf, micBufferSize)
+        var currentChainIndex = 0
+        
+        fun tryNext() {
+            while (currentChainIndex < fallbackChain.size) {
+                val source = fallbackChain[currentChainIndex]
+                val attemptIndex = currentChainIndex + 1
+                AppLog.i("MicRecorder: Trying source %s (attempt %d of %d)", sourceNameFor(source), attemptIndex, fallbackChain.size)
+                
+                if (tryInitSource(source)) {
+                    if (source != preferredSource) {
+                        AppLog.w("MicRecorder: Preferred source %s failed, using fallback %s",
+                            sourceNameFor(preferredSource), sourceNameFor(source))
                     }
-                    // Notify inactive when thread ends
-                    micStatusListener?.onMicStatus(activeSourceName, -96f, false)
-                }, "mic_audio").apply { start() }
-                return
+                    activeSourceName = sourceNameFor(source)
+                    audioRecord?.startRecording()
+                    
+                    // Kill old thread if exists
+                    threadMicAudioActive = false
+                    threadMicAudio?.interrupt()
+                    
+                    threadMicAudioActive = true
+                    threadMicAudio = Thread({
+                        while (threadMicAudioActive) {
+                            val result = micAudioRead(micAudioBuf, micBufferSize)
+                            if (result == RECOVERY_NEEDED_SENTINEL) {
+                                AppLog.w("MicRecorder: Recovery sentinel received in thread. Rotating source.")
+                                threadMicAudioActive = false
+                                // Restart logic from next source
+                                audioRecord?.apply {
+                                    try { stop(); release() } catch (e: Exception) {}
+                                }
+                                audioRecord = null
+                                currentChainIndex++
+                                tryNext()
+                                break
+                            }
+                        }
+                        if (!threadMicAudioActive && audioRecord == null && currentChainIndex >= fallbackChain.size) {
+                            micStatusListener?.onMicStatus(activeSourceName, -96f, false)
+                        }
+                    }, "mic_audio").apply { start() }
+                    return
+                }
+                currentChainIndex++
             }
+            
+            AppLog.e("MicRecorder: All sources failed to initialize or recover")
+            activeSourceName = "None (all failed)"
+            micStatusListener?.onMicStatus(activeSourceName, -96f, false)
         }
 
-        AppLog.e("MicRecorder: All sources failed to initialize")
-        activeSourceName = "None (all failed)"
-        micStatusListener?.onMicStatus(activeSourceName, -96f, false)
+        tryNext()
     }
 
     /** Try to create and initialize an AudioRecord for the given source. */
@@ -254,12 +303,12 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
 
                 if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
                     AppLog.i("MicRecorder: SCO Connected. Starting AudioRecord via BT.")
+                    cleanupScoReceiver()
                     activeSourceName = "Bluetooth SCO"
                     startWithFallback(MediaRecorder.AudioSource.MIC)
                 } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED && bluetoothScoStarted) {
                     AppLog.w("MicRecorder: SCO Disconnected. Falling back to non-BT source.")
                     cleanupSco()
-                    // Fall back to non-BT sources instead of stopping
                     if (audioRecord == null) {
                         startWithFallback(MediaRecorder.AudioSource.MIC)
                     }
@@ -274,5 +323,12 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
         @Suppress("DEPRECATION")
         audioManager.isBluetoothScoOn = true
         bluetoothScoStarted = true
+    }
+
+    private fun cleanupScoReceiver() {
+        try {
+            scoReceiver?.let { context.unregisterReceiver(it) }
+        } catch (e: Exception) {}
+        scoReceiver = null
     }
 }

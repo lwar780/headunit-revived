@@ -143,6 +143,17 @@ class AapTransport(
 
     init {
         micRecorder.listener = this
+        micRecorder.micStatusListener = object : MicRecorder.MicStatusListener {
+            override fun onMicStatus(sourceName: String, rmsDb: Float, isActive: Boolean) {
+                val status = if (isActive) "ACTIVE" else "INACTIVE"
+                val dbStr = if (isActive) String.format("%.1f dB", rmsDb) else "---"
+                AppLog.d("MicRecorder Status: %s | %s | %s", status, sourceName, dbStr)
+
+                if (isActive && rmsDb < -90f) {
+                    AppLog.w("MicRecorder: Possibly stuck at silence (%s, %.1f dB)", sourceName, rmsDb)
+                }
+            }
+        }
         aapAudio = AapAudio(audioDecoder, audioManager, settings)
         aapVideo = AapVideo(videoDecoder, settings) {
             send(com.andrerinas.headunitrevived.aap.protocol.messages.VideoFocusEvent(gain = true, unsolicited = true))

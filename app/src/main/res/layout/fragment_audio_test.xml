@@ -77,6 +77,16 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/save_source_button"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="8dp"
+                            app:icon="@android:drawable/ic_menu_save"
+                            app:iconTint="@color/text_primary"
+                            android:contentDescription="Save source" />
                     </LinearLayout>
 
                     <View
