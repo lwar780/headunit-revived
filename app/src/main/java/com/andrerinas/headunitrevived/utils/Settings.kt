@@ -326,6 +326,10 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("force-wireless-audio", true)
         set(value) { prefs.edit().putBoolean("force-wireless-audio", value).apply() }
 
+    var enableMicAgc: Boolean
+        get() = prefs.getBoolean("enable_mic_agc", true) // Default ON
+        set(value) = prefs.edit().putBoolean("enable_mic_agc", value).apply()
+
     var micInputSource: Int
         get() = prefs.getInt("mic-input-source", 0) // Default: DEFAULT
         set(value) { prefs.edit().putInt("mic-input-source", value).apply() }

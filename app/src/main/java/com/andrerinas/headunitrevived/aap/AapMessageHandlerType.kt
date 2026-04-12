@@ -83,4 +83,8 @@ internal class AapMessageHandlerType(
             AppLog.e("Unknown msg_type: %d, flags: %d, channel: %d", msgType, flags, message.channel)
         }
     }
+
+    override fun stop() {
+        aapControl.stop()
+    }
 }

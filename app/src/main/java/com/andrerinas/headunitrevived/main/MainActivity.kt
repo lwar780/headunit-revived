@@ -171,6 +171,13 @@ class MainActivity : BaseActivity() {
 
         AppLog.i("MainActivity received intent: ${intent.action}, data: ${intent.data}")
 
+        if (intent.action == "REQUEST_MIC_PERMISSION") {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 9001)
+            }
+            return
+        }
+
         if (intent.action == Intent.ACTION_VIEW) {
             val data = intent.data
             if (data?.scheme == "headunit" && data.host == "connect") {

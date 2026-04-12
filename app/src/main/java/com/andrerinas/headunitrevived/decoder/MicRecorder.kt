@@ -150,6 +150,26 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
             val rms = sqrt(sum.toDouble() / sampleCount).toFloat()
             val rmsDb = if (rms > 0) 20f * log10(rms / 32768f) else -96f
 
+            val now = SystemClock.elapsedRealtime()
+
+            // AGC: Normalize audio to target RMS of -20dB (typical speech level)
+            if (settings.enableMicAgc) {
+                val targetRms = 6553.6f  // -20dB in linear scale (0.2 * 32768)
+                if (rms > 0 && rms < targetRms * 0.8) {  // Only boost if below target
+                    val gainFactor = (targetRms / rms).coerceIn(1.0f, 4.0f)  // Max 4x boost
+                    for (i in 0 until len step 2) {
+                        val sample = ((aud_buf[i + 1].toInt() shl 8) or (aud_buf[i].toInt() and 0xFF)).toShort()
+                        val boosted = (sample * gainFactor).toInt().coerceIn(-32768, 32767).toShort()
+                        aud_buf[i] = boosted.toByte()
+                        aud_buf[i + 1] = (boosted.toInt() shr 8).toByte()
+                    }
+                    if (now - lastLogMs > LOG_INTERVAL_MS) {
+                        AppLog.i("MicRecorder: AGC applied gain=%.2fx (rms %.1f→%.1f dB)",
+                            gainFactor, 20f * log10(rms / 32768f), rmsDb)
+                    }
+                }
+            }
+
             if (rmsDb < -90f) {
                 consecutiveSilentFrames++
                 if (consecutiveSilentFrames >= MAX_SILENT_FRAMES_BEFORE_RECOVERY) {
@@ -160,8 +180,6 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
             } else {
                 consecutiveSilentFrames = 0
             }
-
-            val now = SystemClock.elapsedRealtime()
 
             // Status callback throttled to 200ms
             if (now - lastStatusUpdateMs > STATUS_INTERVAL_MS) {

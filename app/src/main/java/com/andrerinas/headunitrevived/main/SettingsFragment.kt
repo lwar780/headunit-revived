@@ -49,6 +49,7 @@ class SettingsFragment : Fragment() {
     private var pendingBluetoothAddress: String? = null
     private var pendingEnableAudioSink: Boolean? = null
     private var pendingForceWirelessAudio: Boolean? = null
+    private var pendingEnableMicAgc: Boolean? = null
     private var pendingUseAacAudio: Boolean? = null
     private var pendingMicInputSource: Int? = null
     private var pendingUseNativeSsl: Boolean? = null
@@ -107,6 +108,7 @@ class SettingsFragment : Fragment() {
         pendingBluetoothAddress = settings.bluetoothAddress
         pendingEnableAudioSink = settings.enableAudioSink
         pendingForceWirelessAudio = settings.forceWirelessAudio
+        pendingEnableMicAgc = settings.enableMicAgc
         pendingUseAacAudio = settings.useAacAudio
         pendingMicInputSource = settings.micInputSource
         pendingUseNativeSsl = settings.useNativeSsl
@@ -233,6 +235,7 @@ class SettingsFragment : Fragment() {
         pendingBluetoothAddress?.let { settings.bluetoothAddress = it }
         pendingEnableAudioSink?.let { settings.enableAudioSink = it }
         pendingForceWirelessAudio?.let { settings.forceWirelessAudio = it }
+        pendingEnableMicAgc?.let { settings.enableMicAgc = it }
         pendingUseAacAudio?.let { settings.useAacAudio = it }
         pendingMicInputSource?.let { settings.micInputSource = it }
         pendingUseNativeSsl?.let { settings.useNativeSsl = it }
@@ -314,6 +317,7 @@ class SettingsFragment : Fragment() {
                         pendingBluetoothAddress != settings.bluetoothAddress ||
                         pendingEnableAudioSink != settings.enableAudioSink ||
                         pendingForceWirelessAudio != settings.forceWirelessAudio ||
+                        pendingEnableMicAgc != settings.enableMicAgc ||
                         pendingUseAacAudio != settings.useAacAudio ||
                         pendingMicInputSource != settings.micInputSource ||
                         pendingUseNativeSsl != settings.useNativeSsl ||
@@ -991,6 +995,18 @@ class SettingsFragment : Fragment() {
                         dialog.dismiss()
                     }
                     .show()
+            }
+        ))
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "enableMicAgc",
+            nameResId = R.string.mic_agc,
+            descriptionResId = R.string.mic_agc_description,
+            isChecked = pendingEnableMicAgc!!,
+            onCheckedChanged = { isChecked ->
+                pendingEnableMicAgc = isChecked
+                checkChanges()
+                updateSettingsList()
             }
         ))
 

@@ -481,4 +481,8 @@
     <string name="exit_dialog_pip">Picture-in-Picture</string>
     <string name="exit_dialog_background">Move to Background</string>
     <string name="gesture_hint">Tip: Swipe from the left edge with 2 fingers to open the exit menu.</string>
+    <string name="mic_agc">Microphone Auto Gain</string>
+    <string name="mic_agc_description">Boost quiet audio for better voice recognition</string>
+    <string name="mic_failed_title">Microphone Failed</string>
+    <string name="retry">Retry</string>
 </resources>

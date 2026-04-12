@@ -46,6 +46,10 @@ import com.andrerinas.headunitrevived.utils.HeadUnitScreenConfig
 import com.andrerinas.headunitrevived.utils.SystemUI
 import android.content.IntentFilter
 import com.andrerinas.headunitrevived.view.ProjectionViewScaler
+import com.andrerinas.headunitrevived.BuildConfig
+import android.net.Uri
+import android.widget.LinearLayout
+import com.andrerinas.headunitrevived.view.GlassView.GlassState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -77,6 +81,18 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private var fpsTextView: TextView? = null
     private var micIndicator: TextView? = null
     private val micHideRunnable = Runnable { micIndicator?.visibility = View.GONE }
+
+    private var micFailOverlay: View? = null
+    private val micFailReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val errorCode = intent.getIntExtra("error_code", 0)
+            val errorMsg = intent.getStringExtra("error_message") ?: "Unknown error"
+
+            runOnUiThread {
+                showMicFailOverlay(errorMsg, errorCode)
+            }
+        }
+    }
 
     private val videoWatchdogRunnable = object : Runnable {
         override fun run() {
@@ -400,6 +416,40 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         val loadingOverlay = findViewById<View>(R.id.loading_overlay)
         loadingOverlay?.bringToFront()
 
+        if (BuildConfig.DEBUG) {
+            val micDebugOverlay = TextView(this).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    Gravity.TOP or Gravity.START
+                ).apply { setMargins(16, 100, 0, 0) }
+                setTextColor(Color.YELLOW)
+                setBackgroundColor(Color.argb(180, 0, 0, 0))
+                setPadding(12, 8, 12, 8)
+                textSize = 12f
+                typeface = Typeface.MONOSPACE
+                text = "MIC: init"
+                visibility = View.GONE
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    elevation = 101f
+                    translationZ = 101f
+                }
+            }
+            container.addView(micDebugOverlay)
+
+            // Wire to MicRecorder status
+            commManager.micStatusListener = object : com.andrerinas.headunitrevived.decoder.MicRecorder.MicStatusListener {
+                override fun onMicStatus(sourceName: String, rmsDb: Float, isActive: Boolean) {
+                    runOnUiThread {
+                        micDebugOverlay.visibility = if (isActive) View.VISIBLE else View.GONE
+                        micDebugOverlay.text = "MIC: %s | %.1f dB".format(sourceName, rmsDb)
+                    }
+                }
+            }
+
+            AppLog.i("DEBUG: Mic status overlay enabled")
+        }
+
         findViewById<Button>(R.id.disconnect_button)?.setOnClickListener {
             commManager.disconnect()
         }
@@ -420,6 +470,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         watchdogHandler.removeCallbacks(reconnectingWatchdog)
         unregisterReceiver(keyCodeReceiver)
         unregisterReceiver(nightModeReceiver)
+        try { unregisterReceiver(micFailReceiver) } catch (e: Exception) {}
     }
 
     override fun onResume() {
@@ -434,6 +485,9 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         // Register night mode receiver for AA monochrome filter
         ContextCompat.registerReceiver(this, nightModeReceiver, IntentFilter(AapService.ACTION_NIGHT_MODE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+
+        // Register mic fail receiver
+        ContextCompat.registerReceiver(this, micFailReceiver, IntentFilter("com.andrerinas.headunitrevived.MIC_FAILED"), ContextCompat.RECEIVER_NOT_EXPORTED)
 
         // Request current night mode state for initial desaturation
         sendBroadcast(Intent(AapService.ACTION_REQUEST_NIGHT_MODE_UPDATE).apply {
@@ -591,6 +645,80 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         startMain.addCategory(Intent.CATEGORY_HOME)
         startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(startMain)
+    }
+
+    private fun showMicFailOverlay(message: String, errorCode: Int) {
+        val container = findViewById<FrameLayout>(R.id.container)
+        // Remove existing overlay if present
+        micFailOverlay?.let { container.removeView(it) }
+
+        val overlay = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.argb(220, 0, 0, 0))
+            isClickable = true
+            isFocusable = true
+
+            val content = LinearLayout(this@AapProjectionActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(48, 48, 48, 48)
+
+                addView(TextView(this@AapProjectionActivity).apply {
+                    text = "🎤 Microphone Failed"
+                    textSize = 24f
+                    setTextColor(Color.WHITE)
+                    gravity = Gravity.CENTER
+                })
+
+                addView(TextView(this@AapProjectionActivity).apply {
+                    text = message
+                    textSize = 16f
+                    setTextColor(Color.rgb(255, 200, 200))
+                    gravity = Gravity.CENTER
+                    setPadding(0, 16, 0, 32)
+                })
+
+                addView(Button(this@AapProjectionActivity).apply {
+                    text = "Retry"
+                    textSize = 18f
+                    setOnClickListener {
+                        container.removeView(this@apply)
+                        micFailOverlay = null
+                        // Trigger mic restart via broadcast to AapService/AapControl
+                        sendBroadcast(Intent("com.andrerinas.headunitrevived.RETRY_MIC"))
+                    }
+                })
+
+                if (errorCode == -3) {  // Permission denied
+                    addView(Button(this@AapProjectionActivity).apply {
+                        text = "Open Settings"
+                        textSize = 14f
+                        setOnClickListener {
+                            startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", packageName, null)
+                            })
+                        }
+                        // Added padding via LayoutParams for better control
+                    }.apply {
+                        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                        lp.topMargin = 16
+                        layoutParams = lp
+                    })
+                }
+            }
+
+            addView(content, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            ))
+        }
+
+        container.addView(overlay)
+        micFailOverlay = overlay
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
@@ -757,6 +885,73 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private fun onKeyEvent(keyCode: Int, isPress: Boolean) {
         AppLog.d("AapProjectionActivity: onKeyEvent code=$keyCode, isPress=$isPress")
         commManager.send(keyCode, isPress)
+    }
+
+    private fun showMicFailOverlay(message: String, errorCode: Int) {
+        // Remove existing overlay if present
+        val container = findViewById<FrameLayout>(R.id.container) ?: return
+        micFailOverlay?.let { container.removeView(it) }
+
+        val overlay = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.argb(220, 0, 0, 0))
+
+            val content = LinearLayout(this@AapProjectionActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(48, 48, 48, 48)
+
+                addView(TextView(this@AapProjectionActivity).apply {
+                    text = getString(R.string.mic_failed_title)
+                    textSize = 24f
+                    setTextColor(Color.WHITE)
+                    gravity = Gravity.CENTER
+                })
+
+                addView(TextView(this@AapProjectionActivity).apply {
+                    text = message
+                    textSize = 16f
+                    setTextColor(Color.rgb(255, 200, 200))
+                    gravity = Gravity.CENTER
+                    setPadding(0, 16, 0, 32)
+                })
+
+                addView(Button(this@AapProjectionActivity).apply {
+                    text = getString(R.string.retry)
+                    textSize = 18f
+                    setOnClickListener {
+                        micFailOverlay?.let { container.removeView(it) }
+                        micFailOverlay = null
+                        sendBroadcast(Intent("com.andrerinas.headunitrevived.RETRY_MIC"))
+                    }
+                })
+
+                if (errorCode == -3) {  // Permission denied
+                    addView(Button(this@AapProjectionActivity).apply {
+                        text = getString(R.string.open_settings)
+                        textSize = 14f
+                        setOnClickListener {
+                            startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", packageName, null)
+                            })
+                        }
+                        setPadding(0, 16, 0, 0)
+                    })
+                }
+            }
+
+            addView(content, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            ))
+        }
+
+        container.addView(overlay)
+        micFailOverlay = overlay
     }
 
     override fun onDestroy() {

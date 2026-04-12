@@ -1,6 +1,8 @@
 package com.andrerinas.headunitrevived.aap
 
 import android.app.Notification
+import android.Manifest
+import android.content.pm.PackageManager
 import android.app.PendingIntent
 import android.app.Service
 import android.app.UiModeManager
@@ -423,6 +425,31 @@ class AapService : Service(), UsbReceiver.Listener {
         setupNightMode()
         observeConnectionState()
         registerReceivers()
+
+        // Check mic permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) {
+            AppLog.w("AapService: RECORD_AUDIO permission not granted. Voice commands will fail.")
+
+            val permIntent = Intent(this, MainActivity::class.java).apply {
+                action = "REQUEST_MIC_PERMISSION"
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            val permPendingIntent = PendingIntent.getActivity(this, 0, permIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+            val notification = NotificationCompat.Builder(this, "service_channel")
+                .setContentTitle("Microphone Permission Needed")
+                .setContentText("Voice commands require microphone access")
+                .setSmallIcon(R.drawable.ic_network_wifi_white)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(permPendingIntent)
+                .setAutoCancel(true)
+                .build()
+
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.notify(9001, notification)
+        }
 
         // Initialize MediaSession early and set it active immediately.
         // This ensures media button routing works even BEFORE an AA connection,

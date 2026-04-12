@@ -9,6 +9,7 @@ import com.andrerinas.headunitrevived.utils.Settings
 
 internal interface AapRead {
     fun read(): Int
+    fun stop() {}
 
     abstract class Base internal constructor(
             private val connection: AccessoryConnection?,
@@ -25,6 +26,10 @@ internal interface AapRead {
         }
 
         protected abstract fun doRead(connection: AccessoryConnection): Int
+
+        override fun stop() {
+            handler.stop()
+        }
     }
 
     object Factory {
