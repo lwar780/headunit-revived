@@ -43,6 +43,9 @@ dependencies {
     // Multidex
     implementation("androidx.multidex:multidex:2.0.1")
 
+    // Android Auto SDK
+    implementation("androidx.car.app:app:1.4.0")
+
     // Navigation Component
     implementation("androidx.navigation:navigation-fragment-ktx:2.3.5")
     implementation("androidx.navigation:navigation-ui-ktx:2.3.5")

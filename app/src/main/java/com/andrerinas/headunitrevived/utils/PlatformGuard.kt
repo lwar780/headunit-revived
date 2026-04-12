@@ -46,7 +46,31 @@ object PlatformGuard {
     val hasNotificationChannels: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
 
-    /** True if the device supports the VibrationEffect API (API 26+) */
+    /** True if the device supports the modern VibrationEffect API (API 26+) */
     val hasModernVibration: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-}
+
+    /** True if the device supports the modern Parcelable API (API 33+) */
+    val hasTiramisu: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+    /** True if the device supports Runtime Permissions (API 23+) */
+    val hasRuntimePermissions: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+
+    /** True if the device supports Foreground Service Types (API 29+) */
+    val hasServiceTypes: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
+    /** True if the device supports Android 5.0 Lollipop APIs (API 21+) */
+    val hasLollipop: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+
+    /** True if the device supports Android 8.0 Oreo APIs (API 26+) */
+    val hasOreo: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+
+    /** True if the device supports Android 6.0 Marshmallow APIs (API 23+) */
+    val hasMarshmallow: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+    }

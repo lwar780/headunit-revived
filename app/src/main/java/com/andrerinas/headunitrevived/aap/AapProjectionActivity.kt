@@ -49,8 +49,13 @@ import com.andrerinas.headunitrevived.utils.SystemUI
 import com.andrerinas.headunitrevived.view.ProjectionViewScaler
 import com.andrerinas.headunitrevived.BuildConfig
 import android.net.Uri
-import com.andrerinas.headunitrevived.view.GlassView.GlassState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+
+import com.andrerinas.headunitrevived.utils.FeatureFlags
+import com.andrerinas.headunitrevived.trip.TripEventBus
+import com.andrerinas.headunitrevived.trip.TripEvent
+import com.andrerinas.headunitrevived.trip.OfflineUiService
+import kotlinx.coroutines.flow.collect
 
 /**
  * Android Auto projection activity with rotation support.
@@ -62,9 +67,22 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     private lateinit var projectionView: IProjectionView
     private val videoDecoder: VideoDecoder by lazy { App.provide(this).videoDecoder }
     private val settings: Settings by lazy { Settings(this) }
+    private val featureFlags by lazy { FeatureFlags(this) }
     private var isSurfaceSet = false
     private var overlayState = OverlayState.STARTING
     private val watchdogHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    private var signalLossLastUpdateMs: Long = 0
+    private val signalLossUpdateRunnable = object : Runnable {
+        override fun run() {
+            val overlay = findViewById<View>(R.id.signal_loss_overlay)
+            if (overlay?.visibility == View.VISIBLE && signalLossLastUpdateMs > 0) {
+                val diffMin = (System.currentTimeMillis() - signalLossLastUpdateMs) / 60000
+                findViewById<TextView>(R.id.signal_loss_last_updated)?.text = "Last updated: $diffMin min ago"
+                watchdogHandler.postDelayed(this, 30000)
+            }
+        }
+    }
 
     private var initialX = 0f
     private var initialY = 0f
@@ -82,12 +100,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             runOnUiThread {
                 showMicFailOverlay(errorMsg, errorCode)
             }
-        }
-    }
-
-    private val toggleHudReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            // Implementation if needed
         }
     }
 
@@ -140,7 +152,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private val keyCodeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val event: KeyEvent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val event: KeyEvent? = if (PlatformGuard.hasTiramisu) {
                 intent.getParcelableExtra(KeyIntent.extraEvent, KeyEvent::class.java)
             } else {
                 @Suppress("DEPRECATION")
@@ -169,7 +181,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 setBackgroundColor(Color.parseColor("#80000000"))
                 setPadding(10, 5, 10, 5)
                 text = "FPS: --"
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (PlatformGuard.hasElevation) {
                     elevation = 100f
                     translationZ = 100f
                 }
@@ -194,7 +206,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 setBackgroundColor(Color.parseColor("#80000000"))
                 setPadding(8, 4, 8, 4)
                 visibility = View.GONE
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (PlatformGuard.hasElevation) {
                     elevation = 100f
                     translationZ = 100f
                 }
@@ -218,7 +230,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 typeface = Typeface.MONOSPACE
                 text = "MIC: init"
                 visibility = View.GONE
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (PlatformGuard.hasElevation) {
                     elevation = 101f
                     translationZ = 101f
                 }
@@ -248,8 +260,32 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                commManager.connectionState.collect { state ->
-                    if (state is CommManager.ConnectionState.Disconnected && state.isUserExit) finish()
+                launch {
+                    commManager.connectionState.collect { state ->
+                        if (state is CommManager.ConnectionState.Disconnected && state.isUserExit) finish()
+                    }
+                }
+                launch {
+                    TripEventBus.getInstance().events.collect { event ->
+                        when (event) {
+                            is TripEvent.SignalLost -> {
+                                runOnUiThread {
+                                    val overlay = findViewById<View>(R.id.signal_loss_overlay)
+                                    overlay?.visibility = View.VISIBLE
+                                    signalLossLastUpdateMs = event.timestamp
+                                    watchdogHandler.post(signalLossUpdateRunnable)
+                                }
+                            }
+                            is TripEvent.SignalResumed -> {
+                                runOnUiThread {
+                                    val overlay = findViewById<View>(R.id.signal_loss_overlay)
+                                    overlay?.visibility = View.GONE
+                                    watchdogHandler.removeCallbacks(signalLossUpdateRunnable)
+                                }
+                            }
+                            else -> {}
+                        }
+                    }
                 }
             }
         }
@@ -439,6 +475,15 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     }
     override fun onVideoDimensionsChanged(width: Int, height: Int) {
         runOnUiThread { ProjectionViewScaler.updateScale(projectionView as View, width, height) }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AppLog.i("AapProjectionActivity.onDestroy called. isFinishing=$isFinishing")
+        videoDecoder.dimensionsListener = null
+        videoDecoder.onFpsChanged = null
+        videoDecoder.onFirstFrameListener = null
+        commManager.micStatusListener = null
     }
 
     private val commManager get() = App.provide(this).commManager

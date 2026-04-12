@@ -178,23 +178,6 @@ class Settings(context: Context) {
         get() = prefs.getInt("inset-bottom", 0)
         set(value) { prefs.edit().putInt("inset-bottom", value).apply() }
 
-    // Legacy Margins (can be removed later if unused)
-    var marginLeft: Int
-        get() = prefs.getInt("margin-left", 0)
-        set(value) { prefs.edit().putInt("margin-left", value).apply() }
-
-    var marginTop: Int
-        get() = prefs.getInt("margin-top", 0)
-        set(value) { prefs.edit().putInt("margin-top", value).apply() }
-
-    var marginRight: Int
-        get() = prefs.getInt("margin-right", 0)
-        set(value) { prefs.edit().putInt("margin-right", value).apply() }
-
-    var marginBottom: Int
-        get() = prefs.getInt("margin-bottom", 0)
-        set(value) { prefs.edit().putInt("margin-bottom", value).apply() }
-
     var fullscreenMode: FullscreenMode
         get() {
             // Migration logic

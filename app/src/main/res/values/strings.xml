@@ -482,4 +482,14 @@
     <string name="ok">OK</string>
     <string name="data_st">Data</string>
     <string name="audio_output_unknown">Unknown output</string>
+
+    <!-- Trip Journal -->
+    <string name="trip_journal">Trip Journal</string>
+    <string name="trip_details">Trip Details</string>
+    <string name="trip_events">Trip Events</string>
+    <string name="start_location">Start: %s</string>
+    <string name="end_location">End: %s</string>
+    <string name="trip_duration">%d min</string>
+    <string name="trip_distance">%.1f km</string>
+    <string name="no_trips_found">No recent trips found.</string>
 </resources>

@@ -19,6 +19,7 @@ import kotlin.math.sqrt
 
 class MicRecorder(private val micSampleRate: Int, private val context: Context) {
 
+    @Volatile
     private var audioRecord: AudioRecord? = null
     private val settings = Settings(context)
 
@@ -46,6 +47,7 @@ class MicRecorder(private val micSampleRate: Int, private val context: Context) 
         }
     }
 
+    @Volatile
     private var threadMicAudioActive = false
     private var threadMicAudio: Thread? = null
     var listener: Listener? = null

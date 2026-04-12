@@ -162,6 +162,28 @@
         </activity>
 
         <activity
+            android:name=".trip.JournalActivity"
+            android:exported="true"
+            android:label="@string/trip_journal"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.APP_MAPS" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.car.app.carAppService"
+                android:value=".trip.JournalService" />
+        </activity>
+
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
+
+        <activity
             android:name=".main.SettingsActivity"
             android:label="@string/settings"
             android:theme="@style/AppTheme" />
@@ -177,6 +199,19 @@
             </intent-filter>
         </service>
         <service android:name=".location.GpsLocationService" />
+        <service android:name=".trip.TripIntelligenceService" android:exported="false" />
+        <service android:name=".trip.OfflineUiService" android:exported="false" />
+        <service android:name=".trip.VoiceAnnouncementService" android:exported="false" />
+        <service android:name=".trip.TripJournalService" android:exported="false" />
+        <service
+            android:name=".trip.JournalService"
+            android:exported="true"
+            android:label="@string/trip_journal">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.NAVIGATION" />
+            </intent-filter>
+        </service>
 
         <!-- AndroidX MediaButtonReceiver: Routes MEDIA_BUTTON intents to AapService
              on Android 8+ where implicit broadcasts to manifest-registered receivers

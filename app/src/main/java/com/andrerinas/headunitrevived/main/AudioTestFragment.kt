@@ -71,7 +71,7 @@ class AudioTestFragment : Fragment() {
         }
     }
 
-    private val audioDeviceCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    private val audioDeviceCallback = if (PlatformGuard.hasAudioDeviceCallback) {
         object : AudioDeviceCallback() {
             override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) { updateOutputDevice() }
             override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) { updateOutputDevice() }
@@ -102,7 +102,7 @@ class AudioTestFragment : Fragment() {
         setupListeners()
         updateOutputDevice()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (PlatformGuard.hasAudioDeviceCallback) {
             val audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager
             audioManager.registerAudioDeviceCallback(audioDeviceCallback, null)
         }
@@ -394,7 +394,7 @@ class AudioTestFragment : Fragment() {
     }
 
     private fun updateOutputDevice() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (PlatformGuard.hasAudioDeviceCallback) {
             val am = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager
             val devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
             
@@ -429,7 +429,7 @@ class AudioTestFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (PlatformGuard.hasAudioDeviceCallback) {
             val am = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager
             am.unregisterAudioDeviceCallback(audioDeviceCallback)
         }
