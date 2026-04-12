@@ -145,7 +145,7 @@ internal class AapControlService(
         AppLog.i("Channel Open Request: %d", channel)
 
         val response = Control.ChannelOpenResponse.newBuilder()
-                .setStatus(Common.MessageStatus.STATUS_SUCCESS)
+                .setStatusValue(0) // Common.MessageStatus.STATUS_SUCCESS
                 .build()
         val msg = AapMessage(channel, Control.ControlMsgType.MESSAGE_CHANNEL_OPEN_RESPONSE_VALUE, response)
         aapTransport.send(msg)
@@ -231,7 +231,7 @@ internal class AapControlMedia(private val aapTransport: AapTransport, private v
             }
             Media.MediaMsgType.MESSAGE_MEDIA_SETUP_REQUEST_VALUE -> {
                 val response = Media.MediaSetupResponse.newBuilder()
-                        .setStatus(Common.MessageStatus.STATUS_SUCCESS)
+                        .setStatusValue(0) // Common.MessageStatus.STATUS_SUCCESS
                         .build()
                 val msg = AapMessage(message.channel, Media.MediaMsgType.MESSAGE_MEDIA_SETUP_RESPONSE_VALUE, response)
                 aapTransport.send(msg)
@@ -246,7 +246,7 @@ internal class AapControlMedia(private val aapTransport: AapTransport, private v
                     val response = Media.VideoFocusResponse.newBuilder()
                             .setFocusStatus(Media.VideoFocusStatus.VIDEO_FOCUS_PROJECTED)
                             .build()
-                    val msg = AapMessage(message.channel, Media.MediaMsgType.MESSAGE_VIDEO_FOCUS_RESPONSE_VALUE, response)
+                    val msg = AapMessage(message.channel, Media.VideoFocusMode.VIDEO_FOCUS_PROJECTED_VALUE, response)
                     aapTransport.send(msg)
                 }
             }
@@ -277,7 +277,7 @@ internal class AapControlTouch(private val aapTransport: AapTransport) : AapCont
 
     private fun inputBinding(request: Input.KeyBindingRequest, channel: Int): Int {
         val response = Input.KeyBindingResponse.newBuilder()
-                .setStatus(Common.MessageStatus.STATUS_SUCCESS)
+                .setStatusValue(0) // Common.MessageStatus.STATUS_SUCCESS
                 .build()
         val msg = AapMessage(channel, Input.MsgType.BINDINGRESPONSE_VALUE, response)
         aapTransport.send(msg)
@@ -291,7 +291,7 @@ internal class AapControlSensor(private val aapTransport: AapTransport, private 
             Sensors.MsgType.SENSOR_START_REQUEST_VALUE -> {
                 val request = message.parse(Sensors.SensorStartRequest.newBuilder()).build()
                 val response = Sensors.SensorStartResponse.newBuilder()
-                        .setStatus(Common.MessageStatus.STATUS_SUCCESS)
+                        .setStatusValue(0) // Common.MessageStatus.STATUS_SUCCESS
                         .build()
                 val msg = AapMessage(message.channel, Sensors.MsgType.SENSOR_START_RESPONSE_VALUE, response)
                 aapTransport.send(msg)
