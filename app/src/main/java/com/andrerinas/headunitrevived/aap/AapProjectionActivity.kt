@@ -366,10 +366,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         projectionView.addCallback(this)
 
         val overlayView = OverlayTouchView(this)
-        overlayView.layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        )
         overlayView.isFocusable = true
         overlayView.isFocusableInTouchMode = true
 
@@ -381,7 +377,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             true
         }
 
-        container.addView(overlayView)
+        container.addView(overlayView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+
+        // Ensure overlayView size matches the usable area (after insets are applied)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(container) { _, insets ->
+            val systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val params = overlayView.layoutParams as FrameLayout.LayoutParams
+            params.setMargins(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            overlayView.layoutParams = params
+            insets
+        }
+
         overlayView.requestFocus()
         setFullscreen()
 

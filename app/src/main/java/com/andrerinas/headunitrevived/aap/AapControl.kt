@@ -201,7 +201,8 @@ internal class AapControlService(
         private val aapTransport: AapTransport,
         private val aapAudio: AapAudio,
         private val settings: Settings,
-        private val context: Context): AapControl {
+        private val context: Context,
+        private val micRecorder: MicRecorder): AapControl {
 
     override fun execute(message: AapMessage): Int {
 
@@ -289,10 +290,13 @@ internal class AapControlService(
     }
 
     private fun voiceSessionNotification(request: Control.VoiceSessionNotification): Int {
-        if (request.status == Control.VoiceSessionNotification.VoiceSessionStatus.VOICE_STATUS_START)
+        if (request.status == Control.VoiceSessionNotification.VoiceSessionStatus.VOICE_STATUS_START) {
             AppLog.i("Voice Session Notification: START")
-        else if (request.status == Control.VoiceSessionNotification.VoiceSessionStatus.VOICE_STATUS_STOP)
+            micRecorder.start()
+        } else if (request.status == Control.VoiceSessionNotification.VoiceSessionStatus.VOICE_STATUS_STOP) {
             AppLog.i("Voice Session Notification: STOP")
+            micRecorder.stop()
+        }
         return 0
     }
 
@@ -364,7 +368,7 @@ internal class AapControlGateway(
                 settings: Settings,
                 context: Context) : this(
             aapTransport,
-            AapControlService(aapTransport, aapAudio, settings, context),
+            AapControlService(aapTransport, aapAudio, settings, context, micRecorder),
             AapControlMedia(aapTransport, micRecorder, aapAudio),
             AapControlTouch(aapTransport),
             AapControlSensor(aapTransport, context))
