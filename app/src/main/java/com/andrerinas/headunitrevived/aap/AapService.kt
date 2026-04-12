@@ -613,7 +613,7 @@ class AapService : Service(), UsbReceiver.Listener {
                 }
             })
         }
-        if (oneShot) networkDiscovery?.startScan() else networkDiscovery?.startScan()
+        networkDiscovery?.startScan()
     }
     
     private fun startWirelessServer() { 
