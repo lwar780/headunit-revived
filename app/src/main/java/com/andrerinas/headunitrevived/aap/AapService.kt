@@ -70,6 +70,7 @@ import com.andrerinas.headunitrevived.utils.SilentAudioPlayer
 import com.andrerinas.headunitrevived.connection.CarKeyReceiver
 import com.andrerinas.headunitrevived.connection.NativeAaHandshakeManager
 import com.andrerinas.headunitrevived.connection.NearbyManager
+import com.andrerinas.headunitrevived.connection.ConnectionMediator
 import com.andrerinas.headunitrevived.utils.Settings
 import com.andrerinas.headunitrevived.utils.PlatformGuard
 import com.andrerinas.headunitrevived.utils.FeatureFlags
@@ -546,7 +547,11 @@ class AapService : Service(), UsbReceiver.Listener {
             }
             ACTION_STOP_WIRELESS -> stopWirelessServer()
             ACTION_NATIVE_AA_POKE -> intent.getStringExtra(EXTRA_MAC)?.let { initWifiMode(); nativeAaHandshakeManager?.manualPoke(it) }
-            ACTION_NEARBY_CONNECT -> intent.getStringExtra(EXTRA_ENDPOINT_ID)?.let { nearbyManager?.connectToEndpoint(it) }
+            ACTION_NEARBY_CONNECT -> intent.getStringExtra(EXTRA_ENDPOINT_ID)?.let { 
+                serviceScope.launch {
+                    requestApprovalAndConnect(ConnectionMediator.PendingConnection.Nearby(it))
+                }
+            }
             ACTION_DISCONNECT -> if (commManager.isConnected) commManager.disconnect()
             ACTION_CHECK_USB -> checkAlreadyConnectedUsb(force = true)
             else -> if (intent?.action == null || intent.action == Intent.ACTION_MAIN) checkAlreadyConnectedUsb()
@@ -557,7 +562,37 @@ class AapService : Service(), UsbReceiver.Listener {
     override fun onUsbAttach(device: UsbDevice) { userExitedAA = false; if (UsbDeviceCompat.isInAccessoryMode(device)) checkAlreadyConnectedUsb(force = true) else serviceScope.launch { delay(USB_ATTACH_FALLBACK_DELAY_MS); if (!commManager.isConnected && !isSwitchingToAccessory.get()) checkAlreadyConnectedUsb(force = true) } }
     override fun onUsbDetach(device: UsbDevice) { userExitedAA = false; if (commManager.isConnectedToUsbDevice(device)) commManager.disconnect(sendByeBye = false) }
     override fun onUsbAccessoryDetach() { userExitedAA = false; if (commManager.isConnected) commManager.disconnect(sendByeBye = false); serviceScope.launch { delay(1500); checkAlreadyConnectedUsb(force = true) } }
-    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) { if (granted) { if (UsbDeviceCompat.isInAccessoryMode(device)) { isSwitchingToAccessory.set(true); serviceScope.launch { try { connectUsbWithRetry(device) } finally { isSwitchingToAccessory.set(false) } } } else { isSwitchingToAccessory.set(true); serviceScope.launch(Dispatchers.IO) { try { if (UsbAccessoryMode(getSystemService(Context.USB_SERVICE) as UsbManager).connectAndSwitch(device)) {} } finally { isSwitchingToAccessory.set(false) } } } } else Toast.makeText(this, getString(R.string.usb_permission_denied), Toast.LENGTH_LONG).show() }
+    override fun onUsbPermission(granted: Boolean, connect: Boolean, device: UsbDevice) {
+        if (granted) {
+            if (UsbDeviceCompat.isInAccessoryMode(device)) {
+                isSwitchingToAccessory.set(true)
+                serviceScope.launch {
+                    try {
+                        connectUsbWithRetry(device)
+                    } finally {
+                        isSwitchingToAccessory.set(false)
+                    }
+                }
+            } else {
+                isSwitchingToAccessory.set(true)
+                serviceScope.launch {
+                    try {
+                        val settings = App.provide(this@AapService).settings
+                        if (settings.confirmConnections) {
+                            if (!ConnectionMediator.requestConnection(ConnectionMediator.PendingConnection.Usb(device))) {
+                                return@launch
+                            }
+                        }
+                        withContext(Dispatchers.IO) {
+                            UsbAccessoryMode(getSystemService(Context.USB_SERVICE) as UsbManager).connectAndSwitch(device)
+                        }
+                    } finally {
+                        isSwitchingToAccessory.set(false)
+                    }
+                }
+            }
+        } else Toast.makeText(this, getString(R.string.usb_permission_denied), Toast.LENGTH_LONG).show()
+    }
     private fun requestUsbPermission(device: UsbDevice) { (getSystemService(Context.USB_SERVICE) as UsbManager).requestPermission(device, UsbReceiver.createPermissionPendingIntent(this)) }
     private fun onHandshakeFailed() {
         val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
@@ -596,13 +631,48 @@ class AapService : Service(), UsbReceiver.Listener {
 
     private fun performSingleUsbConnect(device: UsbDevice) {
         val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-        if (usbManager.hasPermission(device)) { isSwitchingToAccessory.set(true); serviceScope.launch(Dispatchers.IO) { try { UsbAccessoryMode(usbManager).connectAndSwitch(device) } finally { isSwitchingToAccessory.set(false) } } }
+        if (usbManager.hasPermission(device)) {
+            isSwitchingToAccessory.set(true)
+            serviceScope.launch {
+                try {
+                    val settings = App.provide(this@AapService).settings
+                    if (settings.confirmConnections) {
+                        if (!ConnectionMediator.requestConnection(ConnectionMediator.PendingConnection.Usb(device))) {
+                            return@launch
+                        }
+                    }
+                    withContext(Dispatchers.IO) {
+                        UsbAccessoryMode(usbManager).connectAndSwitch(device)
+                    }
+                } finally {
+                    isSwitchingToAccessory.set(false)
+                }
+            }
+        }
         else requestUsbPermission(device)
+    }
+
+    private suspend fun requestApprovalAndConnect(conn: ConnectionMediator.PendingConnection) {
+        val settings = App.provide(this).settings
+        if (settings.confirmConnections) {
+            AppLog.i("AapService: Requesting connection approval for $conn")
+            if (!ConnectionMediator.requestConnection(conn)) {
+                AppLog.i("AapService: Connection rejected by user.")
+                return
+            }
+        }
+
+        when (conn) {
+            is ConnectionMediator.PendingConnection.Usb -> commManager.connect(conn.device)
+            is ConnectionMediator.PendingConnection.Wifi -> commManager.connect(conn.ip, conn.port)
+            is ConnectionMediator.PendingConnection.Incoming -> commManager.connect(conn.socket)
+            is ConnectionMediator.PendingConnection.Nearby -> nearbyManager?.connectToEndpoint(conn.endpointId)
+        }
     }
 
     private suspend fun connectUsbWithRetry(device: UsbDevice) {
         val settings = App.provide(this).settings
-        commManager.connect(device)
+        requestApprovalAndConnect(ConnectionMediator.PendingConnection.Usb(device))
         if (commManager.isConnected) {
             settings.saveLastConnection(Settings.CONNECTION_TYPE_USB, usbDevice = UsbDeviceCompat(device).uniqueName)
         }
@@ -612,9 +682,9 @@ class AapService : Service(), UsbReceiver.Listener {
         if (networkDiscovery == null) {
             networkDiscovery = NetworkDiscovery(this, object : NetworkDiscovery.Listener {
                 override fun onServiceFound(ip: String, port: Int, socket: Socket?) {
-                    serviceScope.launch { 
-                        if (socket != null) commManager.connect(socket)
-                        else commManager.connect(ip, port)
+                    serviceScope.launch {
+                        if (socket != null) requestApprovalAndConnect(ConnectionMediator.PendingConnection.Incoming(socket))
+                        else requestApprovalAndConnect(ConnectionMediator.PendingConnection.Wifi(ip, port))
                     }
                 }
                 override fun onScanFinished() {}
@@ -678,7 +748,7 @@ class AapService : Service(), UsbReceiver.Listener {
                                 }
                             } else {
                                 AppLog.i("WirelessServer: Accepted client connection from ${clientSocket.inetAddress}. Passing to CommManager...")
-                                commManager.connect(clientSocket)
+                                requestApprovalAndConnect(ConnectionMediator.PendingConnection.Incoming(clientSocket))
                             }
                         }
                     }

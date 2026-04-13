@@ -62,6 +62,7 @@ class SettingsFragment : Fragment() {
     private var pendingWifiConnectionMode: Int? = null
     private var pendingHelperConnectionStrategy: Int? = null
     private var pendingAutoEnableHotspot: Boolean? = null
+    private var pendingConfirmConnections: Boolean? = null
     private var pendingWaitForWifi: Boolean? = null
     private var pendingWaitForWifiTimeout: Int? = null
 
@@ -123,6 +124,7 @@ class SettingsFragment : Fragment() {
 
         pendingKillOnDisconnect = settings.killOnDisconnect
         pendingAutoEnableHotspot = settings.autoEnableHotspot
+        pendingConfirmConnections = settings.confirmConnections
         pendingFakeSpeed = settings.fakeSpeed
 
         pendingWifiConnectionMode = settings.wifiConnectionMode
@@ -255,6 +257,7 @@ class SettingsFragment : Fragment() {
 
         pendingKillOnDisconnect?.let { settings.killOnDisconnect = it }
         pendingAutoEnableHotspot?.let { settings.autoEnableHotspot = it }
+        pendingConfirmConnections?.let { settings.confirmConnections = it }
         pendingFakeSpeed?.let { settings.fakeSpeed = it }
 
         val oldWifiMode = settings.wifiConnectionMode
@@ -336,6 +339,7 @@ class SettingsFragment : Fragment() {
                         pendingNavigationVolumeOffset != settings.navigationVolumeOffset ||
                         pendingKillOnDisconnect != settings.killOnDisconnect ||
                         pendingAutoEnableHotspot != settings.autoEnableHotspot ||
+                        pendingConfirmConnections != settings.confirmConnections ||
                         pendingFakeSpeed != settings.fakeSpeed ||
                         pendingWifiConnectionMode != settings.wifiConnectionMode ||
                         pendingHelperConnectionStrategy != settings.helperConnectionStrategy ||
@@ -835,6 +839,18 @@ class SettingsFragment : Fragment() {
                 }
             ))
         }
+
+        items.add(SettingItem.ToggleSettingEntry(
+            stableId = "confirmConnections",
+            nameResId = R.string.confirm_connections,
+            descriptionResId = R.string.confirm_connections_description,
+            isChecked = pendingConfirmConnections!!,
+            onCheckedChanged = { isChecked ->
+                pendingConfirmConnections = isChecked
+                checkChanges()
+                updateSettingsList()
+            }
+        ))
 
         // --- Video Settings ---
         items.add(SettingItem.CategoryHeader("video", R.string.category_video))

@@ -492,4 +492,8 @@
     <string name="trip_duration">%d min</string>
     <string name="trip_distance">%.1f km</string>
     <string name="no_trips_found">No recent trips found.</string>
+    <string name="connection_request">Connection Request</string>
+    <string name="connect">Connect</string>
+    <string name="confirm_connections">Confirm connections</string>
+    <string name="confirm_connections_description">Show a prompt to confirm before starting Android Auto</string>
 </resources>

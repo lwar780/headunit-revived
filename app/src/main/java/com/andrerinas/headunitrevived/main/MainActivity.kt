@@ -25,6 +25,7 @@ import com.andrerinas.headunitrevived.utils.Settings
 import com.andrerinas.headunitrevived.utils.PlatformGuard
 import com.andrerinas.headunitrevived.utils.SetupWizard
 import com.andrerinas.headunitrevived.utils.SystemUI
+import com.andrerinas.headunitrevived.connection.ConnectionMediator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -106,6 +107,7 @@ class MainActivity : BaseActivity() {
         viewModel.register()
         handleIntent(intent)
         setupWifiDirectInfo()
+        setupConnectionConfirmation()
     }
 
     private fun setupWifiDirectInfo() {
@@ -123,6 +125,34 @@ class MainActivity : BaseActivity() {
                 }
             }
         }
+    }
+
+    private fun setupConnectionConfirmation() {
+        lifecycleScope.launch {
+            ConnectionMediator.pendingConnection.collectLatest { pending ->
+                if (pending != null) {
+                    showConnectionConfirmationDialog(pending)
+                }
+            }
+        }
+    }
+
+    private fun showConnectionConfirmationDialog(pending: ConnectionMediator.PendingConnection) {
+        val title = getString(R.string.connection_request)
+        val message = when (pending) {
+            is ConnectionMediator.PendingConnection.Usb -> "USB Device: ${pending.device.productName ?: pending.device.deviceName}"
+            is ConnectionMediator.PendingConnection.Wifi -> "WiFi: ${pending.ip}:${pending.port}"
+            is ConnectionMediator.PendingConnection.Incoming -> "Incoming connection from ${pending.socket.inetAddress?.hostAddress}"
+            is ConnectionMediator.PendingConnection.Nearby -> "Nearby device: ${pending.endpointId}"
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(R.string.connect) { _, _ -> ConnectionMediator.approve() }
+            .setNegativeButton(R.string.cancel) { _, _ -> ConnectionMediator.reject() }
+            .setOnCancelListener { ConnectionMediator.reject() }
+            .show()
     }
 
     override fun onStart() {
