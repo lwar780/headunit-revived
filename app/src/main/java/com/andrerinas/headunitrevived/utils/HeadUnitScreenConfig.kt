@@ -189,13 +189,17 @@ object HeadUnitScreenConfig {
     }
 
     fun getNegotiatedHeight(): Int {
-        val resString = negotiatedResolutionType.toString().replace("_", "")
-        return resString.split("x")[1].toInt()
+        val type = negotiatedResolutionType ?: return 0
+        val resString = type.toString().replace("_", "")
+        val parts = resString.split("x")
+        return if (parts.size >= 2) parts[1].toInt() else 0
     }
 
     fun getNegotiatedWidth(): Int {
-        val resString = negotiatedResolutionType.toString().replace("_", "")
-        return resString.split("x")[0].toInt()
+        val type = negotiatedResolutionType ?: return 0
+        val resString = type.toString().replace("_", "")
+        val parts = resString.split("x")
+        return if (parts.size >= 1) parts[0].toInt() else 0
     }
 
     fun getHeightMargin(): Int {
@@ -257,12 +261,15 @@ object HeadUnitScreenConfig {
     }
 
     fun getHorizontalCorrection(): Float {
-        return (getNegotiatedWidth() - getWidthMargin()).toFloat() / screenWidthPx.toFloat()
+        val negotiatedWidth = getNegotiatedWidth()
+        if (negotiatedWidth <= 0 || screenWidthPx <= 0) return 1.0f
+        return (negotiatedWidth - getWidthMargin()).toFloat() / screenWidthPx.toFloat()
     }
 
     fun getVerticalCorrection(): Float {
-        val fIntValue = (getNegotiatedHeight() - getHeightMargin()).toFloat() / screenHeightPx.toFloat()
-        return fIntValue
+        val negotiatedHeight = getNegotiatedHeight()
+        if (negotiatedHeight <= 0 || screenHeightPx <= 0) return 1.0f
+        return (negotiatedHeight - getHeightMargin()).toFloat() / screenHeightPx.toFloat()
     }
 
     fun getUsableWidth(): Int = screenWidthPx
