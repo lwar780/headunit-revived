@@ -47,6 +47,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Run unit tests
+        run: ./gradlew testGithubDebugUnitTest --stacktrace
+
+      - name: Run lint
+        run: ./gradlew lintGithubDebug --stacktrace
+
       - name: Build GitHub Release APK
         if: inputs.flavor == 'github' || inputs.flavor == 'both'
         run: ./gradlew assembleGithubRelease --stacktrace
@@ -64,13 +70,9 @@ jobs:
       - name: Prepare release artifacts
         run: |
           mkdir -p release-artifacts
-          if [ -f app/build/outputs/apk/github/release/*.apk ]; then
-            cp app/build/outputs/apk/github/release/*.apk release-artifacts/
-          fi
-          if [ -f app/build/outputs/apk/playstore/release/*.apk ]; then
-            cp app/build/outputs/apk/playstore/release/*.apk release-artifacts/
-          fi
+          find app/build/outputs/apk -name "*.apk" -path "*/release/*" -exec cp {} release-artifacts/ \;
           ls -lh release-artifacts/
+          [ "$(ls -A release-artifacts/)" ] || { echo "ERROR: No release APKs found"; exit 1; }
 
       - name: Create GitHub Release
         if: inputs.create_release
