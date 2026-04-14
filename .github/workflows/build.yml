@@ -56,7 +56,6 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test${{ matrix.flavor }}${{ matrix.build_type }}UnitTest --stacktrace
-        continue-on-error: true
 
       - name: Upload APK artifact
         if: always()
