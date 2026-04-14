@@ -48,7 +48,14 @@ class SessionAnonymizerTest {
 
     @Test
     fun `sanitize control message hashes string content`() {
-        val message = makeRawMessage(Channel.ID_CTR, 0x1234, "MyPhoneModel123".toByteArray())
+        // Build a valid protobuf payload with a string field (field 1, wire type 2)
+        val stringBytes = "MyPhoneModel123".toByteArray()
+        val protoPayload = byteArrayOf(
+            0x0A, // field 1, wire type 2 (length-delimited)
+            stringBytes.size.toByte(),
+            *stringBytes
+        )
+        val message = makeRawMessage(Channel.ID_CTR, 0x1234, protoPayload)
         val sanitized = SessionAnonymizer.sanitize(message, testSalt)
 
         // Verify message structure preserved
@@ -65,7 +72,14 @@ class SessionAnonymizerTest {
 
     @Test
     fun `sanitize wireless message strips content`() {
-        val message = makeRawMessage(Channel.ID_WIFI, 0x5678, "MyWiFiPassword123".toByteArray())
+        // Build a valid protobuf payload with a string field (field 1, wire type 2)
+        val stringBytes = "MyWiFiPassword123".toByteArray()
+        val protoPayload = byteArrayOf(
+            0x0A, // field 1, wire type 2 (length-delimited)
+            stringBytes.size.toByte(),
+            *stringBytes
+        )
+        val message = makeRawMessage(Channel.ID_WIFI, 0x5678, protoPayload)
         val sanitized = SessionAnonymizer.sanitize(message, testSalt)
 
         // Structure preserved
