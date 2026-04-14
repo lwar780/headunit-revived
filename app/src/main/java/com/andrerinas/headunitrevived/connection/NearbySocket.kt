@@ -20,24 +20,29 @@ class NearbySocket : Socket() {
 
     override fun getInputStream(): InputStream {
         return object : InputStream() {
-            override fun read(): Int {
+            private fun awaitWrapper(): InputStream {
+                val deadline = System.currentTimeMillis() + 30_000
                 while (inputStreamWrapper == null) {
+                    if (System.currentTimeMillis() > deadline) {
+                        throw java.net.SocketTimeoutException("NearbySocket: inputStream not ready after 30s")
+                    }
                     Thread.sleep(10)
                 }
-                return inputStreamWrapper!!.read()
+                return inputStreamWrapper!!
             }
 
-            override fun read(b: ByteArray, off: Int, len: Int): Int {
-                while (inputStreamWrapper == null) {
-                    Thread.sleep(10)
-                }
-                return inputStreamWrapper!!.read(b, off, len)
-            }
+            override fun read(): Int = awaitWrapper().read()
+
+            override fun read(b: ByteArray, off: Int, len: Int): Int = awaitWrapper().read(b, off, len)
         }
     }
 
     override fun getOutputStream(): OutputStream {
+        val deadline = System.currentTimeMillis() + 30_000
         while (outputStreamWrapper == null) {
+            if (System.currentTimeMillis() > deadline) {
+                throw java.net.SocketTimeoutException("NearbySocket: outputStream not ready after 30s")
+            }
             Thread.sleep(10)
         }
         return outputStreamWrapper!!

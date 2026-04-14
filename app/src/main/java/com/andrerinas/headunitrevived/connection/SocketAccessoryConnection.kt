@@ -112,7 +112,8 @@ class SocketAccessoryConnection(private val ip: String, private val port: Int, p
                 } catch (e: Throwable) {
                     val errorMessage = e.message ?: e.toString()
                     if (errorMessage.contains("com.mediatek.cta.CtaHttp") || errorMessage.contains("CtaHttp")) {
-                        AppLog.e("HUR_DEBUG: MediaTek crash intercepted.")
+                        AppLog.e("HUR_DEBUG: MediaTek crash intercepted. Connection aborted.")
+                        return@withContext false
                     } else {
                         throw IOException(e)
                     }

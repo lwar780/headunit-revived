@@ -172,7 +172,7 @@ class AapTransport(
         ba.data[1] = data[1]
         Utils.intToBytes(ba.limit - AapMessage.HEADER_SIZE, 2, ba.data)
 
-        val size = connection?.sendBlocking(ba.data, ba.limit, 250) ?: -1
+        val size = connection?.sendBlocking(ba.data, ba.limit, 2000) ?: -1
 
         if (AppLog.LOG_VERBOSE) {
             AppLog.v("Sent size: %d", size)

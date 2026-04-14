@@ -19,6 +19,7 @@ internal class AapReadMultipleMessages(
     private val recvHeader = AapMessageIncoming.EncryptedHeader()
     private val msgBuffer = ByteArray(2 * 1024 * 1024) 
     private val skipBuffer = ByteArray(4)
+    private var consecutiveErrors = 0
 
     override fun doRead(connection: AccessoryConnection): Int {
         val size = try {
@@ -32,15 +33,17 @@ internal class AapReadMultipleMessages(
             // read failure — discard any partial data accumulated in the FIFO
             // so the parser re-syncs cleanly on the next successful read.
             fifo.clear()
+            consecutiveErrors++
             // If the connection is dead (e.g. resetInterface failed to re-claim),
             // signal the transport to quit instead of spinning on a broken connection.
-            if (!connection.isConnected) {
-                AppLog.e("AapRead: Connection lost. Stopping read loop.")
+            if (!connection.isConnected || consecutiveErrors >= 5) {
+                AppLog.e("AapRead: Connection lost (connected=${connection.isConnected}, errors=$consecutiveErrors). Stopping read loop.")
                 return -1
             }
             return 0
         }
         if (size == 0) return 0
+        consecutiveErrors = 0
 
         try {
             if (fifo.remaining() < size) {

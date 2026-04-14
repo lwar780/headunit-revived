@@ -50,8 +50,13 @@ internal class AapSslNative : AapSsl {
         }
 
         val buffer = ByteArray(Messages.DEF_BUFFER_LENGTH)
+        val deadline = System.currentTimeMillis() + 15_000
         var hs_ctr = 0
         while (hs_ctr < 2) {
+            if (System.currentTimeMillis() > deadline) {
+                AppLog.e("Native SSL handshake timed out after 15s")
+                return false
+            }
             hs_ctr++
 
             val handshakeData = handshakeRead()

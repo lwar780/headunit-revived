@@ -14,10 +14,10 @@ internal class AapReadSingleMessage(connection: AccessoryConnection, ssl: AapSsl
     override fun doRead(connection: AccessoryConnection): Int {
         try {
             // Step 1: Read the encrypted header.
-            // No timeout limit (0 = infinite) because this waits for the
-            // NEXT message — the phone can be idle for minutes and that's normal.
-            // TCP keepAlive will detect a truly dead connection.
-            val headerSize = connection.recvBlocking(recvHeader.buf, recvHeader.buf.size, 0, true) 
+            // 60s timeout — long enough for idle periods, short enough to detect
+            // dead WiFi links (TCP keepalive defaults to 2 hours which is too slow).
+            // Returns 0 on timeout, letting the poll loop retry.
+            val headerSize = connection.recvBlocking(recvHeader.buf, recvHeader.buf.size, 60000, true)
             if (headerSize != AapMessageIncoming.EncryptedHeader.SIZE) {
                 if (headerSize == -1) {
                     AppLog.i("AapRead: Connection closed (EOF). Disconnecting.")
