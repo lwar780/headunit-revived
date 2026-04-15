@@ -267,14 +267,16 @@ class CommManager(
      * Phase 1: runs the SSL handshake over the current connection.
      *
      * Must only be called when state is [ConnectionState.Connected]. On success, emits
-     * [ConnectionState.HandshakeComplete] and returns; the inbound message loop is NOT
-     * started yet. Call [startReading] after [VideoDecoder.setSurface] has been invoked
-     * to begin receiving messages.
+     * [ConnectionState.HandshakeComplete], then immediately starts the inbound message loop
+     * and transitions to [ConnectionState.TransportStarted].
+     *
+     * Starting the read loop early (even before a video surface exists) ensures protocol
+     * messages like ServiceDiscovery and VideoConfiguration are processed promptly,
+     * preventing socket timeouts on the phone side. Video frames received before a
+     * surface is set on the [VideoDecoder] will be safely discarded.
      *
      * The [AapTransport.onQuit] callback is wired here; it fires whenever the transport
      * stops (read error, phone bye-bye, timeout) and triggers [transportedQuited].
-     *
-     * Called by [com.andrerinas.headunitrevived.aap.AapService] when physical connection is established.
      */
     suspend fun startHandshake() = withContext(Dispatchers.IO) {
         val currentState = _connectionState.value
@@ -297,6 +299,8 @@ class CommManager(
                 }
                 if (_transport?.startHandshake(_connection!!) == true) {
                     _connectionState.emit(ConnectionState.HandshakeComplete)
+                    // Proactively start reading to process protocol messages immediately.
+                    startReading()
                 } else {
                     _connectionState.emit(ConnectionState.Error("Handshake failed"))
                     disconnect()
@@ -313,20 +317,13 @@ class CommManager(
     /**
      * Phase 2: starts the inbound message loop.
      *
-     * Must only be called when state is [ConnectionState.HandshakeComplete], which implies
-     * both that the SSL handshake has succeeded **and** that [VideoDecoder.setSurface] has
-     * already been called by [com.andrerinas.headunitrevived.aap.AapProjectionActivity].
-     * This ordering guarantees no video frame is ever decoded before a render target exists.
-     *
-     * On success:
-     * 1. Claims audio focus for `STREAM_MUSIC`.
-     * 2. Starts the [AapTransport] read loop.
-     * 3. Emits [ConnectionState.TransportStarted].
+     * Can be called manually, but is now automatically triggered by [startHandshake].
+     * Transition from [HandshakeComplete] to [TransportStarted] happens here.
      */
     suspend fun startReading() = withContext(Dispatchers.IO) {
-        // ONLY allow starting from HandshakeComplete. If already TransportStarted, return.
-        if (_connectionState.value !is ConnectionState.HandshakeComplete) {
-            if (_connectionState.value is ConnectionState.TransportStarted) {
+        val currentState = _connectionState.value
+        if (currentState !is ConnectionState.HandshakeComplete) {
+            if (currentState is ConnectionState.TransportStarted) {
                 AppLog.d("CommManager: Already reading, ignoring duplicate startReading request.")
             }
             return@withContext

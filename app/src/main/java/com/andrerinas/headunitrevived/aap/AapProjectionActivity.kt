@@ -262,16 +262,8 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     commManager.connectionState.collect { state ->
-                        when (state) {
-                            is CommManager.ConnectionState.Disconnected -> {
-                                if (state.isUserExit) finish()
-                            }
-                            is CommManager.ConnectionState.HandshakeComplete -> {
-                                if (surfaceReady) {
-                                    commManager.startReading()
-                                }
-                            }
-                            else -> {}
+                        if (state is CommManager.ConnectionState.Disconnected && state.isUserExit) {
+                            finish()
                         }
                     }
                 }
@@ -477,9 +469,6 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun onSurfaceChanged(surface: android.view.Surface, width: Int, height: Int) {
         videoDecoder.setSurface(surface)
         surfaceReady = true
-        if (commManager.connectionState.value is CommManager.ConnectionState.HandshakeComplete) {
-            lifecycleScope.launch { commManager.startReading() }
-        }
     }
     override fun onSurfaceDestroyed(surface: android.view.Surface) {
         surfaceReady = false
