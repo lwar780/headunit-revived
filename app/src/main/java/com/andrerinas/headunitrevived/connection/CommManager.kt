@@ -274,16 +274,19 @@ class CommManager(
      * The [AapTransport.onQuit] callback is wired here; it fires whenever the transport
      * stops (read error, phone bye-bye, timeout) and triggers [transportedQuited].
      *
-     * Called by [com.andrerinas.headunitrevived.aap.AapService] in parallel with the
-     * projection activity startup, so the handshake latency is hidden behind activity
-     * inflation time rather than added on top of it.
+     * Called by [com.andrerinas.headunitrevived.aap.AapService] when physical connection is established.
      */
     suspend fun startHandshake() = withContext(Dispatchers.IO) {
-        // Another caller already started the handshake — do nothing.
-        if (_connectionState.value is ConnectionState.StartingTransport) return@withContext
+        val currentState = _connectionState.value
+        // Already handshaking or done — do nothing.
+        if (currentState is ConnectionState.StartingTransport || 
+            currentState is ConnectionState.HandshakeComplete ||
+            currentState is ConnectionState.TransportStarted) {
+            return@withContext
+        }
 
         try {
-            if (_connectionState.value is ConnectionState.Connected) {
+            if (currentState is ConnectionState.Connected) {
                 _connectionState.emit(ConnectionState.StartingTransport)
 
                 if (_transport == null) {
@@ -299,7 +302,7 @@ class CommManager(
                     disconnect()
                 }
             } else {
-                _connectionState.emit(ConnectionState.Error("Starting handshake without connection"))
+                _connectionState.emit(ConnectionState.Error("Starting handshake without connection (state=$currentState)"))
             }
         } catch (e: Exception) {
             _connectionState.emit(ConnectionState.Error("Handshake failed: ${e.message}"))
@@ -321,9 +324,16 @@ class CommManager(
      * 3. Emits [ConnectionState.TransportStarted].
      */
     suspend fun startReading() = withContext(Dispatchers.IO) {
-        if (_connectionState.value !is ConnectionState.HandshakeComplete) return@withContext
+        // ONLY allow starting from HandshakeComplete. If already TransportStarted, return.
+        if (_connectionState.value !is ConnectionState.HandshakeComplete) {
+            if (_connectionState.value is ConnectionState.TransportStarted) {
+                AppLog.d("CommManager: Already reading, ignoring duplicate startReading request.")
+            }
+            return@withContext
+        }
 
         try {
+            AppLog.i("CommManager: Starting read loop.")
             _transport?.aapAudio?.requestFocusChange(
                 AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN,

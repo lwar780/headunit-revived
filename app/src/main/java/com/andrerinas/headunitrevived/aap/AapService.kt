@@ -316,6 +316,7 @@ class AapService : Service(), UsbReceiver.Listener {
             commManager.connectionState.collect { state ->
                 when (state) {
                     is CommManager.ConnectionState.Connected -> onConnected()
+                    is CommManager.ConnectionState.HandshakeComplete -> onHandshakeComplete()
                     is CommManager.ConnectionState.TransportStarted -> {
                         hasEverConnected = true
                         accessoryHandshakeFailures = 0
@@ -338,8 +339,18 @@ class AapService : Service(), UsbReceiver.Listener {
         mediaSession?.isActive = true
         updateMediaSessionState(true)
         commManager.onAudioFocusStateChanged = { isPlaying -> updateMediaSessionState(isPlaying) }
+        
+        AppLog.i("AapService: Physical connection established. Starting handshake...")
         serviceScope.launch { commManager.startHandshake() }
-        startActivity(AapProjectionActivity.intent(this).apply { putExtra(AapProjectionActivity.EXTRA_FOCUS, true); addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT) })
+    }
+
+    private fun onHandshakeComplete() {
+        AppLog.i("AapService: Handshake complete. Launching projection activity.")
+        val intent = AapProjectionActivity.intent(this).apply {
+            putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(intent)
     }
 
     private fun setupMediaSession() {
