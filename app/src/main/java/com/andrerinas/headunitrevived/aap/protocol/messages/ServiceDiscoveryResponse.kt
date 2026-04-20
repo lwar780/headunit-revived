@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.os.Build
+import java.io.File
 import com.andrerinas.headunitrevived.App
 import com.andrerinas.headunitrevived.aap.AapMessage
 import com.andrerinas.headunitrevived.aap.KeyCode
@@ -171,29 +172,17 @@ class ServiceDiscoveryResponse(private val context: Context, isSelfMode: Boolean
             services.add(mic)
 
             // Bluetooth Service
-            // Prefer the user-configured address; fall back to the live adapter MAC so that
-            // AA Wireless connections work out-of-the-box without manual setup.
-            val effectiveBtAddress = settings.bluetoothAddress.ifEmpty {
-                try {
-                    val adapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
-                    } else {
-                        @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
-                    }
-                    when {
-                        adapter == null -> { AppLog.w("BT diag: adapter is null (BluetoothManager returned null)"); null }
-                        !adapter.isEnabled -> { AppLog.w("BT diag: adapter.isEnabled=false (BT off or EMUI false-negative)"); null }
-                        adapter.address == "02:00:00:00:00:00" -> { AppLog.w("BT diag: dummy MAC returned (ACCESS_FINE_LOCATION denied or privacy policy)"); null }
-                        adapter.address.isNullOrEmpty() -> { AppLog.w("BT diag: address is null/empty"); null }
-                        else -> { AppLog.i("BT diag: address read OK (${adapter.address.take(5)}**)"); adapter.address }
-                    }
-                } catch (e: Exception) {
-                    AppLog.e("BT diag: exception reading adapter: ${e.message}")
-                    null
-                }
-            }
+            // Resolution order (first non-null wins):
+            //   1. User-configured address in settings (explicit, always reliable)
+            //   2. BluetoothAdapter.getAddress() — works when LOCAL_MAC_ADDRESS is granted
+            //      (auto-granted on privileged/system-app installs common on aftermarket HUs)
+            //   3. /sys/class/bluetooth/hci0/address — Linux sysfs, no permissions required,
+            //      world-readable on Android 8-10 MediaTek/Chinese ROMs where the framework
+            //      API is privacy-masked but the driver file is still accessible
+            val effectiveBtAddress = settings.bluetoothAddress.ifEmpty { resolveBluetoothMac(context) }
             if (!effectiveBtAddress.isNullOrEmpty()) {
-                AppLog.i("BT MAC Address: ${effectiveBtAddress.take(8)}** (${if (settings.bluetoothAddress.isNotEmpty()) "user-set" else "auto-read"})")
+                val source = if (settings.bluetoothAddress.isNotEmpty()) "user-set" else "auto-read"
+                AppLog.i("BT MAC resolved via $source: ${effectiveBtAddress.take(8)}**")
                 val bluetooth = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_BTH
                     service.bluetoothService = Control.Service.BluetoothService.newBuilder().also {
@@ -206,7 +195,8 @@ class ServiceDiscoveryResponse(private val context: Context, isSelfMode: Boolean
                 }.build()
                 services.add(bluetooth)
             } else {
-                AppLog.w("BT MAC: no address available — BT service will be skipped from ServiceDiscovery")
+                AppLog.w("BT MAC: all resolution methods failed — BT service omitted from ServiceDiscovery. " +
+                        "Set BT MAC manually in Settings if AA Wireless fails to connect.")
             }
 
             val mediaPlaybackStatus = Control.Service.newBuilder().also { service ->
@@ -252,6 +242,57 @@ class ServiceDiscoveryResponse(private val context: Context, isSelfMode: Boolean
 
                 addAllServices(services)
             }.build()
+        }
+
+        /**
+         * Resolves the local Bluetooth adapter MAC address using a 2-tier fallback:
+         *
+         * **Tier 1 — Framework API** (`BluetoothAdapter.getAddress()`):
+         * Returns the real MAC when `LOCAL_MAC_ADDRESS` (signature permission) is granted.
+         * This is automatically granted on aftermarket HU ROMs that install the app as a
+         * privileged system app. Filters out `02:00:00:00:00:00` (Android privacy dummy).
+         *
+         * **Tier 2 — Linux sysfs** (`/sys/class/bluetooth/hci0/address`):
+         * The BT driver writes the hardware MAC here at adapter init. On Android 8–10
+         * MediaTek/Chinese ROM devices the file is world-readable regardless of Android
+         * permission model (SELinux untrusted_app policy does not block it on these builds).
+         * Returns null on Android 11+ where sysfs access is tightened — fails gracefully.
+         *
+         * Returns null if both tiers fail; caller falls back to manual Settings entry.
+         */
+        private fun resolveBluetoothMac(context: Context): String? {
+            val macRegex = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+
+            // Tier 1: Framework API — works when LOCAL_MAC_ADDRESS is granted
+            try {
+                val adapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+                } else {
+                    @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
+                }
+                val address = adapter?.takeIf { it.isEnabled }?.address
+                if (!address.isNullOrEmpty() && address != "02:00:00:00:00:00" && address.matches(macRegex)) {
+                    AppLog.d("BT MAC: resolved via framework API")
+                    return address.uppercase()
+                }
+            } catch (e: Exception) {
+                AppLog.d("BT MAC: framework API unavailable (${e.message})")
+            }
+
+            // Tier 2: Linux sysfs — world-readable on Android 8-10 MediaTek/Chinese ROMs
+            // hci0 is the primary BT controller on single-radio devices
+            try {
+                val address = File("/sys/class/bluetooth/hci0/address").readText().trim()
+                if (address.isNotEmpty() && address != "02:00:00:00:00:00" && address.matches(macRegex)) {
+                    AppLog.d("BT MAC: resolved via sysfs")
+                    return address.uppercase()
+                }
+            } catch (e: Exception) {
+                AppLog.d("BT MAC: sysfs unavailable (${e.message})")
+            }
+
+            AppLog.w("BT MAC: could not resolve automatically (set manually in Settings if needed)")
+            return null
         }
 
         private fun makeSensorType(type: Sensors.SensorType): Control.Service.SensorSourceService.Sensor {
