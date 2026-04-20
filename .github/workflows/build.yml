@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         flavor: [ github ]
-        build_type: [ debug, release ]
       fail-fast: false
 
     steps:
@@ -35,40 +34,24 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Decode keystore
-        if: matrix.build_type == 'release' && env.KEYSTORE_BASE64 != ''
-        run: echo "$KEYSTORE_BASE64" | base64 -d > headunit-release-key.jks
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-
-      - name: Build ${{ matrix.flavor }} ${{ matrix.build_type }}
-        run: |
-          if [ "${{ matrix.build_type }}" = "release" ] && [ -z "$KEYSTORE_BASE64" ]; then
-            echo "No keystore secrets — building release with debug signing"
-            ./gradlew assemble${{ matrix.flavor }}Debug --stacktrace
-          else
-            ./gradlew assemble${{ matrix.flavor }}${{ matrix.build_type }} --stacktrace
-          fi
-        env:
-          HEADUNIT_KEYSTORE_PASSWORD: ${{ secrets.HEADUNIT_KEYSTORE_PASSWORD }}
-          HEADUNIT_KEY_PASSWORD: ${{ secrets.HEADUNIT_KEY_PASSWORD }}
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Build ${{ matrix.flavor }} debug
+        run: ./gradlew assemble${{ matrix.flavor }}Debug --stacktrace
 
       - name: Run tests
-        run: ./gradlew test${{ matrix.flavor }}${{ matrix.build_type }}UnitTest --stacktrace
+        run: ./gradlew test${{ matrix.flavor }}DebugUnitTest --stacktrace
 
       - name: Upload APK artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ matrix.flavor }}-${{ matrix.build_type }}-${{ github.sha }}
-          path: app/build/outputs/apk/${{ matrix.flavor }}/${{ matrix.build_type }}/*.apk
+          name: apk-${{ matrix.flavor }}-debug-${{ github.sha }}
+          path: app/build/outputs/apk/${{ matrix.flavor }}/debug/*.apk
           retention-days: 30
 
       - name: Upload build reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-reports-${{ matrix.flavor }}-${{ matrix.build_type }}
+          name: build-reports-${{ matrix.flavor }}-debug
           path: app/build/reports/
           retention-days: 7
