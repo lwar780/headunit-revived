@@ -105,16 +105,20 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
 
     private val videoWatchdogRunnable = object : Runnable {
         override fun run() {
+            if (!commManager.isConnected) return
             val loadingOverlay = findViewById<View>(R.id.loading_overlay)
-            if (loadingOverlay?.visibility == View.VISIBLE && commManager.isConnected) {
-                if (videoDecoder.lastFrameRenderedMs > 0) {
-                    loadingOverlay.visibility = View.GONE
-                    overlayState = OverlayState.HIDDEN
-                    return
-                }
-                commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
-                watchdogHandler.postDelayed(this, 1500)
+            if (videoDecoder.lastFrameRenderedMs > 0) {
+                // First frame received — hide loading overlay if present and stop watchdog.
+                loadingOverlay?.visibility = View.GONE
+                overlayState = OverlayState.HIDDEN
+                return
             }
+            // No video yet — send VideoFocusGain to tell the phone we're ready.
+            // This must not be gated on the loading overlay being present; on some
+            // builds the overlay view doesn't exist, which previously caused the
+            // watchdog to silently skip the send, leaving the phone waiting indefinitely.
+            commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
+            watchdogHandler.postDelayed(this, 1500)
         }
     }
 
