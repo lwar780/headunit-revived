@@ -394,29 +394,6 @@ class HomeFragment : Fragment() {
         }
 
         wifiPanel.setOnClickListener {
-            // Check BT is enabled — AA Wireless needs it for ServiceDiscovery
-            val btAdapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                (requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
-            } else {
-                @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
-            }
-            if (btAdapter == null || !btAdapter.isEnabled) {
-                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
-                    .setTitle("Bluetooth Required")
-                    .setMessage("Android Auto Wireless needs Bluetooth to be enabled. Please turn on Bluetooth and try again.")
-                    .setPositiveButton("Enable Bluetooth") { _, _ ->
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
-                        } else {
-                            @Suppress("DEPRECATION")
-                            startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-                        }
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-                return@setOnClickListener
-            }
-
             val mode = App.provide(requireContext()).settings.wifiConnectionMode
             when (mode) {
                 1 -> {

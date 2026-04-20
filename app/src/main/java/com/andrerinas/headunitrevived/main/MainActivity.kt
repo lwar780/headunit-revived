@@ -135,6 +135,37 @@ class MainActivity : BaseActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            ConnectionMediator.pendingBtWarning.collect { required ->
+                if (required) {
+                    ConnectionMediator.clearBtWarning()
+                    showBluetoothRequiredDialog()
+                }
+            }
+        }
+    }
+
+    private fun showBluetoothRequiredDialog() {
+        val btAdapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            (getSystemService(android.bluetooth.BluetoothManager::class.java))?.adapter
+        } else {
+            @Suppress("DEPRECATION") android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+        }
+        if (btAdapter == null || !btAdapter.isEnabled) {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Bluetooth Required")
+                .setMessage("Android Auto Wireless needs Bluetooth to be enabled. Please turn on Bluetooth and try again.")
+                .setPositiveButton("Enable Bluetooth") { _, _ ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        startActivity(Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
     }
 
     private fun showConnectionConfirmationDialog(pending: ConnectionMediator.PendingConnection) {

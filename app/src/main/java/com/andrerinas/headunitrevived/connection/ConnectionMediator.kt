@@ -25,6 +25,17 @@ object ConnectionMediator {
     private val _pendingConnection = MutableStateFlow<PendingConnection?>(null)
     val pendingConnection: StateFlow<PendingConnection?> = _pendingConnection.asStateFlow()
 
+    private val _pendingBtWarning = MutableStateFlow(false)
+    val pendingBtWarning: StateFlow<Boolean> = _pendingBtWarning.asStateFlow()
+
+    fun signalBtRequired() {
+        _pendingBtWarning.value = true
+    }
+
+    fun clearBtWarning() {
+        _pendingBtWarning.value = false
+    }
+
     /**
      * Internal channel used to notify requestConnection of the user's decision.
      */

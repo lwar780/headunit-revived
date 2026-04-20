@@ -60,6 +60,8 @@ import android.app.NotificationManager
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.provider.Settings as AndroidSettings
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.view.View
 import android.view.WindowManager
 import com.andrerinas.headunitrevived.app.UsbAttachedActivity
@@ -664,6 +666,21 @@ class AapService : Service(), UsbReceiver.Listener {
     }
 
     private suspend fun requestApprovalAndConnect(conn: ConnectionMediator.PendingConnection) {
+        // BT check for all WiFi paths — covers inbound AND outbound connections.
+        // USB and Nearby do not rely on Bluetooth ServiceDiscovery, so they are excluded.
+        if (conn is ConnectionMediator.PendingConnection.Wifi || conn is ConnectionMediator.PendingConnection.Incoming) {
+            val adapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+            } else {
+                @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
+            }
+            if (adapter == null || !adapter.isEnabled) {
+                AppLog.w("AapService: WiFi AA connection blocked — Bluetooth is disabled. BT MAC cannot be declared in ServiceDiscovery.")
+                ConnectionMediator.signalBtRequired()
+                return
+            }
+        }
+
         val settings = App.provide(this).settings
         if (settings.confirmConnections) {
             AppLog.i("AapService: Requesting connection approval for $conn")
