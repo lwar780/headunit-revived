@@ -59,14 +59,24 @@ internal class AapControlGateway(
             Channel.ID_SEN -> return sensorControl.execute(message)
             Channel.ID_VID, Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2, Channel.ID_MIC -> return mediaControl.execute(message)
             else -> {
-                // Route all other channels (ID_BTH=8, ID_MPB=9, ID_NAV=10, etc.) to the
-                // control service. This is critical: ChannelOpen requests arrive on the
-                // channel being opened (msgType in 0..31), so a ChannelOpen for BTH/MPB/NAV
-                // must reach controlService.channelOpenRequest() to get a ChannelOpenResponse.
-                // Without this, the phone sends ChannelOpen, gets no response, and stalls —
-                // the root cause of every session hanging after ServiceDiscovery.
-                AppLog.d("AapControlGateway: routing ch=${message.channel} type=${message.type} to controlService")
-                return controlService.execute(message)
+                // Channels ID_BTH(8), ID_MPB(9), ID_NAV(10) and any future channels.
+                // Two distinct message type ranges arrive here and need different handlers:
+                //
+                // 1. Control messages (type 0..31, e.g. ChannelOpen=7):
+                //    → controlService: responds with ChannelOpenResponse.
+                //
+                // 2. Media setup messages (type 32768..32799, e.g. MEDIA_MESSAGE_SETUP=32769):
+                //    → mediaControl: responds with MEDIA_MESSAGE_CONFIG so the phone knows
+                //      the channel is ready. Without this Config response the phone blocks
+                //      waiting for acknowledgment and never starts sending video.
+                //
+                // Any other type falls through to controlService which logs it as unhandled.
+                AppLog.d("AapControlGateway: routing ch=${message.channel} type=${message.type}")
+                return if (message.type in 32768..32799) {
+                    mediaControl.execute(message)
+                } else {
+                    controlService.execute(message)
+                }
             }
         }
     }
