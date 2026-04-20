@@ -34,6 +34,7 @@ class VehicleInfoFragment : Fragment() {
     private var pendingRightHandDrive: Boolean? = null
     private var pendingHeadUnitMake: String? = null
     private var pendingHeadUnitModel: String? = null
+    private var pendingBluetoothAddress: String? = null
 
     private var hasChanges = false
     private val SAVE_ITEM_ID = 1001
@@ -55,6 +56,7 @@ class VehicleInfoFragment : Fragment() {
         pendingRightHandDrive = settings.rightHandDrive
         pendingHeadUnitMake = settings.headUnitMake
         pendingHeadUnitModel = settings.headUnitModel
+        pendingBluetoothAddress = settings.bluetoothAddress
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -129,6 +131,7 @@ class VehicleInfoFragment : Fragment() {
         pendingRightHandDrive?.let { settings.rightHandDrive = it }
         pendingHeadUnitMake?.let { settings.headUnitMake = it }
         pendingHeadUnitModel?.let { settings.headUnitModel = it }
+        pendingBluetoothAddress?.let { settings.bluetoothAddress = it }
 
         hasChanges = false
         updateSaveButtonState()
@@ -144,7 +147,8 @@ class VehicleInfoFragment : Fragment() {
                 pendingVehicleId != settings.vehicleId ||
                 pendingRightHandDrive != settings.rightHandDrive ||
                 pendingHeadUnitMake != settings.headUnitMake ||
-                pendingHeadUnitModel != settings.headUnitModel
+                pendingHeadUnitModel != settings.headUnitModel ||
+                pendingBluetoothAddress != settings.bluetoothAddress
 
         updateSaveButtonState()
     }
@@ -272,6 +276,20 @@ class VehicleInfoFragment : Fragment() {
             }
         ))
 
+        items.add(SettingItem.SettingEntry(
+            stableId = "bluetoothAddress",
+            nameResId = R.string.bluetooth_address_s,
+            descriptionResId = R.string.bt_address_hint,
+            value = pendingBluetoothAddress?.ifEmpty { getString(R.string.bt_address_not_set) } ?: getString(R.string.bt_address_not_set),
+            onClick = {
+                showBluetoothAddressDialog(pendingBluetoothAddress ?: "") { value ->
+                    pendingBluetoothAddress = value
+                    checkChanges()
+                    updateSettingsList()
+                }
+            }
+        ))
+
         settingsAdapter.submitList(items) {
             scrollState?.let { recyclerView.layoutManager?.onRestoreInstanceState(it) }
         }
@@ -316,6 +334,52 @@ class VehicleInfoFragment : Fragment() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun showBluetoothAddressDialog(currentValue: String, onResult: (String) -> Unit) {
+        val macRegex = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+
+        val container = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(48, 16, 48, 0)
+        }
+
+        val hintText = android.widget.TextView(requireContext()).apply {
+            text = getString(R.string.bt_address_dialog_hint)
+            val textColorAttr = android.util.TypedValue()
+            context.theme.resolveAttribute(android.R.attr.textColorSecondary, textColorAttr, true)
+            setTextColor(context.resources.getColor(textColorAttr.resourceId, context.theme))
+            textSize = 13f
+            setPadding(0, 0, 0, 24)
+        }
+        container.addView(hintText)
+
+        val editText = android.widget.EditText(requireContext()).apply {
+            setText(currentValue)
+            setSelection(text.length)
+            hint = "AA:BB:CC:DD:EE:FF"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            filters = arrayOf(android.text.InputFilter.LengthFilter(17))
+        }
+        container.addView(editText)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.bluetooth_address_s)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val value = editText.text.toString().trim().uppercase()
+            when {
+                value.isEmpty() -> { onResult(""); dialog.dismiss() }
+                !value.matches(macRegex) -> {
+                    editText.error = getString(R.string.bt_address_invalid)
+                }
+                else -> { onResult(value); dialog.dismiss() }
+            }
+        }
     }
 
     private fun showYearInputDialog(currentValue: String, onResult: (String) -> Unit) {
