@@ -319,6 +319,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun updateAudioStatus() {
+        if (!isAdded) return  // callback can fire after fragment detaches; guard requireContext()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val audioManager = requireContext().getSystemService<AudioManager>()
             val outputs = audioManager?.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
