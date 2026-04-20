@@ -1,10 +1,14 @@
 package com.andrerinas.headunitrevived.main
 
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import java.io.File
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -276,13 +280,22 @@ class VehicleInfoFragment : Fragment() {
             }
         ))
 
+        // Show auto-detected MAC as display value when not manually set, so user can
+        // see what was found and confirm or override it.
+        val detectedMac = resolveBluetoothMacForDisplay()
+        val btDisplayValue = when {
+            pendingBluetoothAddress?.isNotEmpty() == true -> pendingBluetoothAddress!!
+            detectedMac != null -> getString(R.string.bt_address_detected, detectedMac)
+            else -> getString(R.string.bt_address_not_set)
+        }
         items.add(SettingItem.SettingEntry(
             stableId = "bluetoothAddress",
             nameResId = R.string.bluetooth_address_s,
-            descriptionResId = R.string.bt_address_hint,
-            value = pendingBluetoothAddress?.ifEmpty { getString(R.string.bt_address_not_set) } ?: getString(R.string.bt_address_not_set),
+            value = btDisplayValue,
             onClick = {
-                showBluetoothAddressDialog(pendingBluetoothAddress ?: "") { value ->
+                // Pre-fill dialog with detected MAC if user hasn't set one yet
+                val prefill = pendingBluetoothAddress?.ifEmpty { detectedMac ?: "" } ?: (detectedMac ?: "")
+                showBluetoothAddressDialog(prefill) { value ->
                     pendingBluetoothAddress = value
                     checkChanges()
                     updateSettingsList()
@@ -334,6 +347,27 @@ class VehicleInfoFragment : Fragment() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    /** Attempts to read the BT adapter MAC without requiring user input. Returns null if unavailable. */
+    private fun resolveBluetoothMacForDisplay(): String? {
+        val macRegex = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+        try {
+            val adapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                (requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+            } else {
+                @Suppress("DEPRECATION") android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+            }
+            val addr = adapter?.takeIf { it.isEnabled }?.address
+            if (!addr.isNullOrEmpty() && addr != "02:00:00:00:00:00" && addr.matches(macRegex))
+                return addr.uppercase()
+        } catch (_: Exception) {}
+        try {
+            val addr = File("/sys/class/bluetooth/hci0/address").readText().trim()
+            if (addr.isNotEmpty() && addr != "02:00:00:00:00:00" && addr.matches(macRegex))
+                return addr.uppercase()
+        } catch (_: Exception) {}
+        return null
     }
 
     private fun showBluetoothAddressDialog(currentValue: String, onResult: (String) -> Unit) {

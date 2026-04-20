@@ -65,6 +65,7 @@
     <string name="bluetooth_address_s">Bluetooth address</string>
     <string name="enter_bluetooth_mac">Enter bluetooth MAC</string>
     <string name="bt_address_not_set">Not set — AA Wireless may not connect</string>
+    <string name="bt_address_detected">Auto-detected: %s (tap to confirm)</string>
     <string name="bt_address_hint">Used by Android Auto Wireless to identify this head unit. Find it in Android Settings → About device → Status → Bluetooth address.</string>
     <string name="bt_address_dialog_hint">Find your Bluetooth address in:\nAndroid Settings → About device → Status → Bluetooth address</string>
     <string name="bt_address_invalid">Invalid format. Enter as AA:BB:CC:DD:EE:FF</string>
