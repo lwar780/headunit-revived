@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="AppTheme" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowContentOverlay">@null</item>
@@ -30,7 +30,7 @@
         <item name="android:windowFullscreen">true</item>
     </style>
 
-    <style name="DarkAlertDialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+    <style name="DarkAlertDialog" parent="Theme.Material3.Dark.Dialog.Alert">
         <item name="colorPrimary">@color/brand_teal</item>
         <item name="colorOnPrimary">@android:color/white</item>
         <item name="colorSecondary">@color/brand_teal</item>
@@ -56,7 +56,7 @@
         <item name="android:textSize">22sp</item>
     </style>
 
-    <style name="SafetyDialogTheme" parent="Theme.Material3.DayNight.Dialog">
+    <style name="SafetyDialogTheme" parent="Theme.Material3.Dark.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
     </style>
