@@ -208,7 +208,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun startSelfModeInternal() {
-        AapService.selfMode = true
         val intent = Intent(requireContext(), AapService::class.java)
         intent.action = AapService.ACTION_START_SELF_MODE
         ContextCompat.startForegroundService(requireContext(), intent)

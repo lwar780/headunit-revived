@@ -14,9 +14,10 @@ internal class AapMessageHandlerType(
         private val aapVideo: AapVideo,
         settings: Settings,
         backgroundNotification: BackgroundNotification,
-        context: Context) : AapMessageHandler {
+        context: Context,
+        isSelfMode: Boolean = false) : AapMessageHandler {
 
-    private val aapControl: AapControl = AapControlGateway(transport, recorder, aapAudio, settings, context)
+    private val aapControl: AapControl = AapControlGateway(transport, recorder, aapAudio, settings, context, isSelfMode)
     private val mediaPlayback = AapMediaPlayback(backgroundNotification)
     private val aapNavigation = AapNavigation(context, settings)
     private var videoPacketCount = 0

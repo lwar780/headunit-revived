@@ -33,8 +33,8 @@ internal interface AapRead {
     }
 
     object Factory {
-        fun create(connection: AccessoryConnection, transport: AapTransport, recorder: MicRecorder, aapAudio: AapAudio, aapVideo: AapVideo, settings: Settings, notification: BackgroundNotification, context: Context): AapRead {
-            val handler = AapMessageHandlerType(transport, recorder, aapAudio, aapVideo, settings, notification, context)
+        fun create(connection: AccessoryConnection, transport: AapTransport, recorder: MicRecorder, aapAudio: AapAudio, aapVideo: AapVideo, settings: Settings, notification: BackgroundNotification, context: Context, isSelfMode: Boolean = false): AapRead {
+            val handler = AapMessageHandlerType(transport, recorder, aapAudio, aapVideo, settings, notification, context, isSelfMode)
 
             return if (connection.isSingleMessage)
                 AapReadSingleMessage(connection, transport.ssl, handler)

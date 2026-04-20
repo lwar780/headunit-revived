@@ -36,9 +36,10 @@ internal class AapControlGateway(
                 micRecorder: MicRecorder,
                 aapAudio: AapAudio,
                 settings: Settings,
-                context: Context) : this(
+                context: Context,
+                isSelfMode: Boolean = false) : this(
             aapTransport,
-            AapControlService(aapTransport, aapAudio, settings, context, micRecorder),
+            AapControlService(aapTransport, aapAudio, settings, context, micRecorder, isSelfMode),
             AapControlMedia(aapTransport, micRecorder, aapAudio),
             AapControlTouch(aapTransport),
             AapControlSensor(aapTransport, context))
@@ -67,7 +68,8 @@ internal class AapControlService(
         private val aapAudio: AapAudio,
         private val settings: Settings,
         private val context: Context,
-        private val micRecorder: MicRecorder): AapControl {
+        private val micRecorder: MicRecorder,
+        private val isSelfMode: Boolean = false): AapControl {
 
     private val retryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -135,7 +137,7 @@ internal class AapControlService(
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
         AppLog.i("Service Discovery Request: %s", request.phoneName)
 
-        val msg = ServiceDiscoveryResponse(context)
+        val msg = ServiceDiscoveryResponse(context, isSelfMode)
         aapTransport.send(msg)
 
         return 0

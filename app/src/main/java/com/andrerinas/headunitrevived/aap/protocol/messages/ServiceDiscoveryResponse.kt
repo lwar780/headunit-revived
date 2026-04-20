@@ -6,7 +6,6 @@ import android.content.Context
 import android.os.Build
 import com.andrerinas.headunitrevived.App
 import com.andrerinas.headunitrevived.aap.AapMessage
-import com.andrerinas.headunitrevived.aap.AapService
 import com.andrerinas.headunitrevived.aap.KeyCode
 import com.andrerinas.headunitrevived.aap.protocol.AudioConfigs
 import com.andrerinas.headunitrevived.aap.protocol.Channel
@@ -17,11 +16,11 @@ import com.andrerinas.headunitrevived.utils.AppLog
 import com.andrerinas.headunitrevived.utils.HeadUnitScreenConfig
 import com.google.protobuf.Message
 
-class ServiceDiscoveryResponse(private val context: Context)
-    : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context)) {
+class ServiceDiscoveryResponse(private val context: Context, isSelfMode: Boolean = false)
+    : AapMessage(Channel.ID_CTR, Control.ControlMsgType.MESSAGE_SERVICE_DISCOVERY_RESPONSE_VALUE, makeProto(context, isSelfMode)) {
 
     companion object {
-        private fun makeProto(context: Context): Message {
+        private fun makeProto(context: Context, isSelfMode: Boolean = false): Message {
             val settings = App.provide(context).settings
 
             // Initialize HeadUnitScreenConfig with actual physical screen dimensions
@@ -132,7 +131,7 @@ class ServiceDiscoveryResponse(private val context: Context)
             services.add(audio2)
 
             if (settings.enableAudioSink) {
-                if (settings.forceWirelessAudio || !AapService.selfMode) {
+                if (settings.forceWirelessAudio || !isSelfMode) {
                     val audio1 = Control.Service.newBuilder().also { service ->
                         service.id = Channel.ID_AU1
                         service.mediaSinkService = Control.Service.MediaSinkService.newBuilder().also {
@@ -144,7 +143,7 @@ class ServiceDiscoveryResponse(private val context: Context)
                     services.add(audio1)
                 }
 
-                if (settings.forceWirelessAudio || !AapService.selfMode) {
+                if (settings.forceWirelessAudio || !isSelfMode) {
                     val audio0 = Control.Service.newBuilder().also { service ->
                         service.id = Channel.ID_AUD
                         service.mediaSinkService = Control.Service.MediaSinkService.newBuilder().also {

@@ -279,7 +279,7 @@ class CommManager(
      * The [AapTransport.onQuit] callback is wired here; it fires whenever the transport
      * stops (read error, phone bye-bye, timeout) and triggers [transportedQuited].
      */
-    suspend fun startHandshake() = withContext(Dispatchers.IO) {
+    suspend fun startHandshake(isSelfMode: Boolean = false) = withContext(Dispatchers.IO) {
         val currentState = _connectionState.value
         // Already handshaking or done — do nothing.
         if (currentState is ConnectionState.StartingTransport || 
@@ -294,7 +294,7 @@ class CommManager(
 
                 if (_transport == null) {
                     val audioManager = context.getSystemService(Application.AUDIO_SERVICE) as AudioManager
-                    _transport = AapTransport(audioDecoder, videoDecoder, audioManager, settings, _backgroundNotification, context, externalSsl = aapSslContext)
+                    _transport = AapTransport(audioDecoder, videoDecoder, audioManager, settings, _backgroundNotification, context, externalSsl = aapSslContext, isSelfMode = isSelfMode)
                     _transport!!.onQuit = { isClean -> transportedQuited(isClean) }
                     _transport!!.onAudioFocusStateChanged = { isPlaying -> onAudioFocusStateChanged?.invoke(isPlaying) }
                 }

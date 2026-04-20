@@ -341,7 +341,7 @@ class AapService : Service(), UsbReceiver.Listener {
         commManager.onAudioFocusStateChanged = { isPlaying -> updateMediaSessionState(isPlaying) }
         
         AppLog.i("AapService: Physical connection established. Starting handshake...")
-        serviceScope.launch { commManager.startHandshake() }
+        serviceScope.launch { commManager.startHandshake(selfMode) }
     }
 
     private fun onHandshakeComplete() {

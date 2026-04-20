@@ -63,7 +63,8 @@ class AapTransport(
         internal val settings: Settings,
         private val notification: BackgroundNotification,
         private val context: Context,
-        private val externalSsl: AapSslContext? = null)
+        private val externalSsl: AapSslContext? = null,
+        private val isSelfMode: Boolean = false)
     : MicRecorder.Listener {
 
     val ssl: AapSsl = if (settings.useNativeSsl) {
@@ -274,7 +275,8 @@ class AapTransport(
             aapVideo,
             settings,
             notification,
-            context
+            context,
+            isSelfMode
         )
         pollHandler?.sendEmptyMessage(MSG_POLL)
     }
