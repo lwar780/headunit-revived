@@ -180,8 +180,15 @@ class ServiceDiscoveryResponse(private val context: Context, isSelfMode: Boolean
                     } else {
                         @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
                     }
-                    adapter?.takeIf { it.isEnabled }?.address?.takeIf { it != "02:00:00:00:00:00" }
+                    when {
+                        adapter == null -> { AppLog.w("BT diag: adapter is null (BluetoothManager returned null)"); null }
+                        !adapter.isEnabled -> { AppLog.w("BT diag: adapter.isEnabled=false (BT off or EMUI false-negative)"); null }
+                        adapter.address == "02:00:00:00:00:00" -> { AppLog.w("BT diag: dummy MAC returned (ACCESS_FINE_LOCATION denied or privacy policy)"); null }
+                        adapter.address.isNullOrEmpty() -> { AppLog.w("BT diag: address is null/empty"); null }
+                        else -> { AppLog.i("BT diag: address read OK (${adapter.address.take(5)}**)"); adapter.address }
+                    }
                 } catch (e: Exception) {
+                    AppLog.e("BT diag: exception reading adapter: ${e.message}")
                     null
                 }
             }
@@ -199,7 +206,7 @@ class ServiceDiscoveryResponse(private val context: Context, isSelfMode: Boolean
                 }.build()
                 services.add(bluetooth)
             } else {
-                AppLog.i("BT MAC Address is empty and adapter unavailable/disabled. Skip bluetooth service")
+                AppLog.w("BT MAC: no address available — BT service will be skipped from ServiceDiscovery")
             }
 
             val mediaPlaybackStatus = Control.Service.newBuilder().also { service ->
