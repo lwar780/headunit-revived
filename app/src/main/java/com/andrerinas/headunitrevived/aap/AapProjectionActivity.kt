@@ -265,6 +265,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                         if (state is CommManager.ConnectionState.Disconnected && state.isUserExit) {
                             finish()
                         }
+                        // Path A: handshake completes while surface is already ready.
+                        // Path B is handled in onSurfaceChanged (surface arrives after handshake).
+                        if (state is CommManager.ConnectionState.HandshakeComplete && surfaceReady) {
+                            lifecycleScope.launch { commManager.startReading() }
+                        }
                     }
                 }
                 launch {
@@ -469,6 +474,11 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
     override fun onSurfaceChanged(surface: android.view.Surface, width: Int, height: Int) {
         videoDecoder.setSurface(surface)
         surfaceReady = true
+        // Path B: surface becomes ready after handshake already completed.
+        // Path A is handled in the connectionState collector above.
+        if (commManager.connectionState.value is CommManager.ConnectionState.HandshakeComplete) {
+            lifecycleScope.launch { commManager.startReading() }
+        }
     }
     override fun onSurfaceDestroyed(surface: android.view.Surface) {
         surfaceReady = false

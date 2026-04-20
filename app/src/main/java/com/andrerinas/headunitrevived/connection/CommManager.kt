@@ -300,8 +300,9 @@ class CommManager(
                 }
                 if (_transport?.startHandshake(_connection!!) == true) {
                     _connectionState.emit(ConnectionState.HandshakeComplete)
-                    // Proactively start reading to process protocol messages immediately.
-                    startReading()
+                    // startReading() is NOT called here. It is deferred until
+                    // AapProjectionActivity confirms its render surface is ready, ensuring
+                    // no video frame is decoded before a render target exists.
                 } else {
                     _connectionState.emit(ConnectionState.Error("Handshake failed"))
                     disconnect()
