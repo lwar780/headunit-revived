@@ -1,6 +1,9 @@
 package com.andrerinas.headunitrevived.aap.protocol.messages
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.os.Build
 import com.andrerinas.headunitrevived.App
 import com.andrerinas.headunitrevived.aap.AapMessage
 import com.andrerinas.headunitrevived.aap.AapService
@@ -169,11 +172,26 @@ class ServiceDiscoveryResponse(private val context: Context)
             services.add(mic)
 
             // Bluetooth Service
-            if (settings.bluetoothAddress.isNotEmpty()) {
+            // Prefer the user-configured address; fall back to the live adapter MAC so that
+            // AA Wireless connections work out-of-the-box without manual setup.
+            val effectiveBtAddress = settings.bluetoothAddress.ifEmpty {
+                try {
+                    val adapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+                    } else {
+                        @Suppress("DEPRECATION") BluetoothAdapter.getDefaultAdapter()
+                    }
+                    adapter?.takeIf { it.isEnabled }?.address?.takeIf { it != "02:00:00:00:00:00" }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            if (!effectiveBtAddress.isNullOrEmpty()) {
+                AppLog.i("BT MAC Address: ${effectiveBtAddress.take(8)}** (${if (settings.bluetoothAddress.isNotEmpty()) "user-set" else "auto-read"})")
                 val bluetooth = Control.Service.newBuilder().also { service ->
                     service.id = Channel.ID_BTH
                     service.bluetoothService = Control.Service.BluetoothService.newBuilder().also {
-                        it.carAddress = settings.bluetoothAddress
+                        it.carAddress = effectiveBtAddress
                         it.addAllSupportedPairingMethods(
                                 listOf(Control.BluetoothPairingMethod.A2DP,
                                         Control.BluetoothPairingMethod.HFP)
@@ -182,7 +200,7 @@ class ServiceDiscoveryResponse(private val context: Context)
                 }.build()
                 services.add(bluetooth)
             } else {
-                AppLog.i("BT MAC Address is empty. Skip bluetooth service")
+                AppLog.i("BT MAC Address is empty and adapter unavailable/disabled. Skip bluetooth service")
             }
 
             val mediaPlaybackStatus = Control.Service.newBuilder().also { service ->
