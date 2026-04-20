@@ -99,7 +99,37 @@ class AapTransport(
     private var connection: AccessoryConnection? = null
     private var aapRead: AapRead? = null
     var isQuittingAllowed: Boolean = false
-    
+
+    /**
+     * Watchdog fired if the phone does not send a ChannelOpen request within
+     * [CHANNEL_OPEN_WATCHDOG_MS] milliseconds of receiving our ServiceDiscovery response.
+     *
+     * This is the most common hang point: the phone receives ServiceDiscovery, decides
+     * something is missing (e.g. BT service), sends AudioFocusRelease, and then goes silent
+     * indefinitely. Without this watchdog the session would hang for several minutes until a
+     * read timeout or a garbage-in-header disconnect naturally occurs.
+     *
+     * Cancelled as soon as the first ChannelOpen request arrives (see [cancelChannelOpenWatchdog]).
+     */
+    private val channelOpenWatchdogRunnable = Runnable {
+        AppLog.e("WATCHDOG: No ChannelOpen received ${CHANNEL_OPEN_WATCHDOG_MS / 1000}s after " +
+                "ServiceDiscovery. Phone is not proceeding — disconnecting to allow retry.")
+        quit(clean = false)
+    }
+
+    /** Starts the post-ServiceDiscovery ChannelOpen watchdog. */
+    internal fun startChannelOpenWatchdog() {
+        pollHandler?.removeCallbacks(channelOpenWatchdogRunnable)
+        pollHandler?.postDelayed(channelOpenWatchdogRunnable, CHANNEL_OPEN_WATCHDOG_MS)
+        AppLog.d("WATCHDOG: ChannelOpen watchdog started (${CHANNEL_OPEN_WATCHDOG_MS / 1000}s)")
+    }
+
+    /** Cancels the watchdog. Must be called when the first ChannelOpen request arrives. */
+    internal fun cancelChannelOpenWatchdog() {
+        pollHandler?.removeCallbacks(channelOpenWatchdogRunnable)
+        AppLog.d("WATCHDOG: ChannelOpen watchdog cancelled — phone is proceeding normally")
+    }
+
     val isWireless: Boolean
         get() = connection is com.andrerinas.headunitrevived.connection.SocketAccessoryConnection
     var ignoreNextStopRequest: Boolean = false
@@ -487,5 +517,10 @@ class AapTransport(
         // Maximum wall-clock time allowed for the version-exchange phase of the AAP handshake.
         // Prevents the retry loop from blocking for minutes on an unresponsive USB device.
         private const val HANDSHAKE_TIMEOUT_MS = 10_000L
+        // How long to wait for the first ChannelOpen after ServiceDiscovery response.
+        // If the phone doesn't open channels within this window it has silently rejected
+        // the session (e.g. missing BT service declaration). Fail fast so the reconnect
+        // loop can retry rather than hanging for several minutes.
+        internal const val CHANNEL_OPEN_WATCHDOG_MS = 20_000L
     }
 }

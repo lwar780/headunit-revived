@@ -341,13 +341,12 @@ class AapService : Service(), UsbReceiver.Listener {
         mediaSession?.isActive = true
         updateMediaSessionState(true)
         commManager.onAudioFocusStateChanged = { isPlaying -> updateMediaSessionState(isPlaying) }
-        
-        AppLog.i("AapService: Physical connection established. Starting handshake...")
+        AppLog.i("═══ STEP 1/4: Physical connection established — starting SSL handshake")
         serviceScope.launch { commManager.startHandshake(selfMode) }
     }
 
     private fun onHandshakeComplete() {
-        AppLog.i("AapService: Handshake complete. Launching projection activity.")
+        AppLog.i("═══ STEP 2/4: SSL handshake complete — launching projection activity")
         val intent = AapProjectionActivity.intent(this).apply {
             putExtra(AapProjectionActivity.EXTRA_FOCUS, true)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -383,6 +382,7 @@ class AapService : Service(), UsbReceiver.Listener {
     }
 
     private fun onDisconnected(state: CommManager.ConnectionState.Disconnected) {
+        AppLog.i("═══ DISCONNECTED — clean=${state.isClean} userExit=${state.isUserExit}")
         isSwitchingToAccessory.set(false)
         releaseWifiLock()
         silentAudioPlayer?.stop()

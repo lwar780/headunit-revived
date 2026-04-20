@@ -340,6 +340,7 @@ class CommManager(
             )
             _transport?.startReading()
             _connectionState.emit(ConnectionState.TransportStarted)
+            AppLog.i("═══ STEP 3/4: Read loop started — waiting for ServiceDiscovery from phone")
         } catch (e: Exception) {
             _connectionState.emit(ConnectionState.Error("Start reading failed: ${e.message}"))
             disconnect()

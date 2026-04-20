@@ -135,16 +135,23 @@ internal class AapControlService(
 
 
     private fun serviceDiscoveryRequest(request: Control.ServiceDiscoveryRequest): Int {
-        AppLog.i("Service Discovery Request: %s", request.phoneName)
+        AppLog.i("═══ STEP 4/4: ServiceDiscovery from phone=${request.phoneName} — sending response")
 
         val msg = ServiceDiscoveryResponse(context, isSelfMode)
         aapTransport.send(msg)
+
+        // Watchdog: phone must send ChannelOpen within CHANNEL_OPEN_WATCHDOG_MS.
+        // Silent hang here (phone received SD but won't open channels) means it rejected
+        // the session — most likely due to missing BT service. Fail fast, allow retry.
+        aapTransport.startChannelOpenWatchdog()
+        AppLog.i("Watchdog armed — phone has ${AapTransport.CHANNEL_OPEN_WATCHDOG_MS / 1000}s to send ChannelOpen")
 
         return 0
     }
 
     private fun channelOpenRequest(request: Control.ChannelOpenRequest, channel: Int): Int {
-        AppLog.i("Channel Open Request: %d", channel)
+        aapTransport.cancelChannelOpenWatchdog()
+        AppLog.i("═══ CHANNEL OPEN ch=$channel — AA projection is starting")
 
         val response = Control.ChannelOpenResponse.newBuilder()
                 .setStatus(Common.MessageStatus.STATUS_SUCCESS)
