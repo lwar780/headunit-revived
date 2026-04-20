@@ -170,6 +170,7 @@ class VideoDecoder(private val settings: Settings) {
             
             // Initialization phase: detect codec and configuration (SPS/PPS)
             if (codec == null) {
+                AppLog.i("VideoDecoder: first frame received (size=$size) — initialising codec")
                 val detectedType = detectCodecType(frameData, frameOffset, size)
                 val typeToUse = detectedType ?: if (codecName.contains("265")) CodecType.H265 else CodecType.H264
                 currentCodecType = typeToUse

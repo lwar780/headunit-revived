@@ -114,9 +114,7 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
                 return
             }
             // No video yet — send VideoFocusGain to tell the phone we're ready.
-            // This must not be gated on the loading overlay being present; on some
-            // builds the overlay view doesn't exist, which previously caused the
-            // watchdog to silently skip the send, leaving the phone waiting indefinitely.
+            AppLog.i("VideoWatchdog: sending VideoFocusEvent(gain=true, unsolicited=true) — no first frame yet")
             commManager.send(VideoFocusEvent(gain = true, unsolicited = true))
             watchdogHandler.postDelayed(this, 1500)
         }

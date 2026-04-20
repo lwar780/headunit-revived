@@ -254,6 +254,7 @@ internal class AapControlMedia(private val aapTransport: AapTransport, private v
     override fun execute(message: AapMessage): Int {
         when (message.type) {
             Media.MsgType.MEDIA_MESSAGE_SETUP_VALUE -> {
+                AppLog.i("MediaControl: SETUP on ch=${message.channel} — sending Config(HEADUNIT)")
                 val response = Media.Config.newBuilder()
                         .setStatus(Media.Config.ConfigStatus.HEADUNIT)
                         .setMaxUnacked(1)
@@ -263,6 +264,7 @@ internal class AapControlMedia(private val aapTransport: AapTransport, private v
             }
             Media.MsgType.MEDIA_MESSAGE_VIDEO_FOCUS_REQUEST_VALUE -> {
                 val focusRequest = message.parse(Media.VideoFocusRequestNotification.newBuilder()).build()
+                AppLog.i("MediaControl: VideoFocusRequest ch=${message.channel} mode=${focusRequest.mode}")
                 if (focusRequest.mode == Media.VideoFocusMode.VIDEO_FOCUS_NATIVE) {
                     AppLog.i("Video Focus NATIVE received. User likely clicked Exit. Stopping transport.")
                     aapTransport.wasUserExit = true
